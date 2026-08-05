@@ -51,12 +51,15 @@
     }
     .panel-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
     
-    .add-names-box { flex: 1; min-width: 280px; }
+    .add-names-box { flex: 1.5; min-width: 320px; }
     .add-names-box h3, .search-box h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; margin: 0 0 5px 0; color: #60a5fa; }
-    .add-names-controls { display: flex; gap: 6px; }
-    .add-names-controls textarea { flex: 1; height: 38px; background: #11131f; border: 1px solid #334155; border-radius: 6px; padding: 6px; color: white; font-size: 10px; resize: none; font-family: inherit; }
+    .add-names-controls { display: flex; flex-direction: column; gap: 6px; }
+    .add-names-controls textarea { width: 100%; height: 38px; background: #11131f; border: 1px solid #334155; border-radius: 6px; padding: 6px; color: white; font-size: 10px; resize: none; font-family: inherit; }
+    
+    .add-config-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .add-config-row select { background: #11131f; border: 1px solid #334155; border-radius: 4px; color: white; font-size: 10px; padding: 4px 6px; flex: 1; }
 
-    .search-box { flex: 1; min-width: 200px; }
+    .search-box { flex: 1; min-width: 180px; }
     .search-input { width: 100%; height: 38px; background: #11131f; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; color: #fde047; font-size: 11px; font-weight: bold; }
 
     .unallocated-box { flex: 2.5; min-width: 320px; background: #11131f; border: 1px solid #262a40; border-radius: 8px; padding: 8px; }
@@ -190,8 +193,31 @@
         <h3>Adicionar Colaboradores</h3>
         <div class="add-names-controls">
           <textarea id="novosNomesInput" placeholder="Cole vários nomes aqui..."></textarea>
-          <button class="btn btn-blue-solid" onclick="adicionarVariosColaboradores()">+ Add</button>
-          <button class="btn btn-red-solid" onclick="resetarBancoNomes()">💥 Zerar</button>
+          
+          <div class="add-config-row">
+            <select id="novoTipoEscala">
+              <option value="seg_sex">Escala 1 (Seg a Sex)</option>
+              <option value="qua_dom">Escala 2 (Qua a Dom)</option>
+              <option value="ter_dom">Escala 3 (Ter a Dom)</option>
+            </select>
+            <select id="novoDomingoMes">
+              <option value="dom1">1º Domingo</option>
+              <option value="dom2">2º Domingo</option>
+              <option value="dom3">3º Domingo</option>
+              <option value="dom4">4º Domingo</option>
+              <option value="dom5">5º Domingo</option>
+            </select>
+            <button class="btn btn-blue-solid" onclick="adicionarVariosColaboradores()">+ Add</button>
+            <button class="btn btn-red-solid" onclick="resetarBancoNomes()">💥 Zerar</button>
+          </div>
+          
+          <!-- Seleção Rápida de Funções ao Cadastrar -->
+          <div style="margin-top: 4px;">
+            <label style="font-size: 9px; color: #94a3b8; font-weight: bold;">Funções Habilitadas para esses Nomes:</label>
+            <div id="quickFuncoesContainer" class="skill-checkbox-grid" style="max-height: 50px; overflow-y: auto;">
+              <!-- Preenchido via JavaScript -->
+            </div>
+          </div>
         </div>
       </div>
 
@@ -207,9 +233,9 @@
             <div>
               <label style="font-size: 9px; color: #94a3b8; font-weight: bold;">Escala Exibida:</label>
               <select id="filtroEscalaTipo" class="filter-select" onchange="aoMudarFiltroEscala()">
-                <option value="seg_sex">Segunda a Sexta</option>
-                <option value="qua_dom">Quarta a Domingo</option>
-                <option value="ter_dom">Terça a Domingo</option>
+                <option value="seg_sex">Escala 1 (Seg a Sex)</option>
+                <option value="qua_dom">Escala 2 (Qua a Dom)</option>
+                <option value="ter_dom">Escala 3 (Ter a Dom)</option>
               </select>
             </div>
             <div>
@@ -256,23 +282,6 @@
         </div>
       </div>
       <div id="pivotTableWrapper"></div>
-    </div>
-  </div>
-
-  <!-- MODAL: ATRIBUIÇÃO DE ESCALA PARA NOVOS COLABORADORES -->
-  <div class="modal-overlay" id="modalNovosNomesEscala">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>📋 Atribuir Escalas aos Novos Colaboradores</h2>
-        <span class="close-modal" onclick="fecharModais()">✕</span>
-      </div>
-      <p style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">
-        Selecione a **Escala de Trabalho** e o **Domingo do Mês** para cada operador cadastrado.
-      </p>
-      <div id="novosNomesEscalaList"></div>
-      <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
-        <button class="btn btn-green-solid" style="padding: 8px 16px; font-size: 12px;" onclick="salvarEscalasNovos()">Confirmar e Cadastrar</button>
-      </div>
     </div>
   </div>
 
@@ -361,7 +370,6 @@
       }
     }
 
-    // Função de Salvamento Automático no Firebase com Debounce
     window.agendarAutoSave = function() {
       alteracaoLocal = true;
       atualizarStatus("🟡 Salvando...", "status-saving");
@@ -383,12 +391,11 @@
         } finally {
           alteracaoLocal = false;
         }
-      }, 500); // Aguarda 500ms para evitar requisições desnecessárias
+      }, 500);
     };
 
-    // Sincronização em tempo real do Firebase (Escuta mudanças no banco)
     onSnapshot(docRef, (docSnap) => {
-      if (alteracaoLocal) return; // Se a mudança foi local, ignora para não sobrescrever
+      if (alteracaoLocal) return;
 
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -416,13 +423,12 @@
     const nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
 
     const tiposEscala = {
-      seg_sex: { label: 'Segunda a Sexta', dias: ['segunda', 'terca', 'quarta', 'quinta', 'sexta'], folgas: ['sabado', 'domingo'] },
-      qua_dom: { label: 'Quarta a Domingo', dias: ['quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda', 'terca'] },
-      ter_dom: { label: 'Terça a Domingo', dias: ['terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda'] }
+      seg_sex: { label: 'Escala 1 (Seg a Sex)', dias: ['segunda', 'terca', 'quarta', 'quinta', 'sexta'], folgas: ['sabado', 'domingo'] },
+      qua_dom: { label: 'Escala 2 (Qua a Dom)', dias: ['quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda', 'terca'] },
+      ter_dom: { label: 'Escala 3 (Ter a Dom)', dias: ['terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda'] }
     };
 
     let abaAtual = 'recebimento';
-    let novosNomesTemporarios = [];
 
     const paresMesas = [
       { id: 'm1_2', label: 'Mesa 1 e Mesa 2' },
@@ -448,7 +454,6 @@
       { id: 'pacotinhos', label: 'Pacotinhos' }
     ];
 
-    // CARDS DE EXTRA DO RECEBIMENTO (SEM PUXAR GAIOLAS E TRATATIVA DE PACOTES)
     const funcoesExtrasRec = [
       { id: 'handover', label: 'HANDOVER', qtd: 6 },
       { id: 'dono_rua', label: 'DONO DE RUA', qtd: 6 },
@@ -476,6 +481,21 @@
       if (!window.escalaRecebimento[dia]) window.escalaRecebimento[dia] = {};
       if (!window.escalaDoubleCheck[dia]) window.escalaDoubleCheck[dia] = {};
     });
+
+    function renderQuickFuncoes() {
+      const container = document.getElementById('quickFuncoesContainer');
+      if (!container) return;
+      let html = '';
+      funcoesDisponiveis.forEach(f => {
+        html += `
+          <label class="skill-item" style="padding: 2px 4px; font-size: 8.5px;">
+            <input type="checkbox" class="quick-skill-cb" value="${f.id}" checked>
+            ${f.label}
+          </label>
+        `;
+      });
+      container.innerHTML = html;
+    }
 
     function formatarNomeAbreviado(nomeCompleto) {
       if (!nomeCompleto || nomeCompleto.trim() === '') return '';
@@ -520,6 +540,7 @@
       aplicarFiltroExibicaoDias();
       atualizarNaoEscalados();
       validarDuplicidades();
+      renderQuickFuncoes();
     };
 
     function buildOptionsHTML() {
@@ -560,7 +581,6 @@
 
         contentHtml += `</div><div class="sub-row-container">`;
 
-        // Card GAIOLEIRO
         contentHtml += `
           <div class="extra-card" style="flex: 0 0 260px; border-color: #8b5cf6;">
             <div class="card-title" style="color: #c084fc;">GAIOLEIRO (2)</div>
@@ -575,7 +595,6 @@
           </div>
         `;
 
-        // Card DISTRIBUIÇÃO VOLUMOSOS
         contentHtml += `
           <div class="extra-card" style="flex: 0 0 530px; border-color: #10b981;">
             <div class="card-title" style="color: #34d399;">DISTRIBUIÇÃO DE VOLUMOSOS (4)</div>
@@ -757,7 +776,6 @@
       atualizarNaoEscalados();
       validarDuplicidades();
 
-      // Dispara Auto Save em Tempo Real
       if (window.agendarAutoSave) window.agendarAutoSave();
     }
 
@@ -1165,82 +1183,37 @@
       const texto = textarea.value;
       if (!texto.trim()) return;
 
+      const tipoEscala = document.getElementById('novoTipoEscala').value;
+      const domingoMes = document.getElementById('novoDomingoMes').value;
+
+      const funcoesMarcadas = [];
+      document.querySelectorAll('.quick-skill-cb:checked').forEach(cb => {
+        funcoesMarcadas.push(cb.value);
+      });
+
       const nomesProcessados = texto.split(/[\n,]+/).map(n => n.trim().toUpperCase()).filter(n => n.length > 0);
-      novosNomesTemporarios = [];
+      let adicionados = 0;
 
       nomesProcessados.forEach(nome => {
-        if (!window.colaboradores.includes(nome) && !novosNomesTemporarios.includes(nome)) {
-          novosNomesTemporarios.push(nome);
+        if (!window.colaboradores.includes(nome)) {
+          window.colaboradores.push(nome);
+          window.escalaPorColaborador[nome] = { tipoEscala, domingoMes };
+          window.skillsColaboradores[nome] = [...funcoesMarcadas];
+          adicionados++;
         }
       });
 
-      if (novosNomesTemporarios.length === 0) {
+      if (adicionados === 0) {
         alert('Todos os colaboradores informados já existem na lista!');
         textarea.value = '';
         return;
       }
 
-      exibirModalEscalasNovos();
-    }
-
-    function exibirModalEscalasNovos() {
-      let html = `<table class="custom-table">
-        <thead>
-          <tr>
-            <th>Colaborador</th>
-            <th>Escala de Trabalho</th>
-            <th>Domingo de Trabalho do Mês</th>
-          </tr>
-        </thead>
-        <tbody>`;
-
-      novosNomesTemporarios.forEach((nome, idx) => {
-        html += `
-          <tr>
-            <td><b>${nome}</b></td>
-            <td>
-              <select id="sel_escala_${idx}" class="filter-select" style="width: 100%; font-size: 11px; padding: 4px;">
-                <option value="seg_sex">Segunda a Sexta</option>
-                <option value="qua_dom">Quarta a Domingo</option>
-                <option value="ter_dom">Terça a Domingo</option>
-              </select>
-            </td>
-            <td>
-              <select id="sel_domingo_${idx}" class="filter-select" style="width: 100%; font-size: 11px; padding: 4px;">
-                <option value="dom1">1º Domingo</option>
-                <option value="dom2">2º Domingo</option>
-                <option value="dom3">3º Domingo</option>
-                <option value="dom4">4º Domingo</option>
-                <option value="dom5">5º Domingo</option>
-              </select>
-            </td>
-          </tr>
-        `;
-      });
-
-      html += '</tbody></table>';
-      document.getElementById('novosNomesEscalaList').innerHTML = html;
-      document.getElementById('modalNovosNomesEscala').classList.add('active');
-    }
-
-    function salvarEscalasNovos() {
-      novosNomesTemporarios.forEach((nome, idx) => {
-        if (!window.colaboradores.includes(nome)) {
-          window.colaboradores.push(nome);
-        }
-
-        const tipoEscala = document.getElementById(`sel_escala_${idx}`).value;
-        const domingoMes = document.getElementById(`sel_domingo_${idx}`).value;
-
-        window.escalaPorColaborador[nome] = { tipoEscala, domingoMes };
-      });
-
       localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
       localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
+      localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
 
-      document.getElementById('novosNomesInput').value = '';
-      novosNomesTemporarios = [];
-      fecharModais();
+      textarea.value = '';
       window.renderEstruturas();
       if (window.agendarAutoSave) window.agendarAutoSave();
     }
@@ -1267,8 +1240,10 @@
       if (confirm(`Remover ${nome}?`)) {
         window.colaboradores = window.colaboradores.filter(c => c !== nome);
         delete window.escalaPorColaborador[nome];
+        delete window.skillsColaboradores[nome];
         localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
         localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
+        localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
         window.renderEstruturas();
         if (window.agendarAutoSave) window.agendarAutoSave();
       }
