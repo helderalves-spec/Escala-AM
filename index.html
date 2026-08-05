@@ -228,7 +228,7 @@
 
       <div class="unallocated-box">
         <div class="unallocated-header">
-          <span class="unallocated-title" id="countInfo">NÃO ALOCADOS (0)</span>
+          <span class="unallocated-title" id="countInfo">TODOS OS COLABORADORES (0)</span>
           <div style="display: flex; gap: 8px; align-items: center;">
             <div>
               <label style="font-size: 9px; color: #94a3b8; font-weight: bold;">Escala Exibida:</label>
@@ -1249,39 +1249,23 @@
       }
     }
 
+    /* MODIFICAÇÃO PRINCIPAL: Exibe todos os colaboradores independente da escala/domingo */
     function atualizarNaoEscalados() {
       if (abaAtual === 'dinamica') return;
-      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
-      const domMesVal = document.getElementById('filtroDomingoMes').value;
-      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
-      const escalaAtualData = (abaAtual === 'recebimento') ? window.escalaRecebimento : window.escalaDoubleCheck;
       
-      const pertencentesEscala = window.colaboradores.filter(c => {
-        const config = window.escalaPorColaborador[c];
-        if (!config) return true;
-        return config.tipoEscala === tipoEscalaVal && config.domingoMes === domMesVal;
-      });
+      const todosColaboradores = window.colaboradores || [];
 
-      const escaladosNaEscala = new Set();
-      diasAlvo.forEach(d => {
-        Object.values(escalaAtualData[d] || {}).forEach(v => {
-          if (v && v.trim() !== '') escaladosNaEscala.add(v);
-        });
-      });
-
-      const naoEscalados = pertencentesEscala.filter(c => !escaladosNaEscala.has(c));
-
-      document.getElementById('countInfo').innerText = `NÃO ALOCADOS (${naoEscalados.length})`;
+      document.getElementById('countInfo').innerText = `TODOS OS COLABORADORES (${todosColaboradores.length})`;
       const listEl = document.getElementById('listaNaoEscalados');
 
-      if (naoEscalados.length === 0) {
-        listEl.innerHTML = '<span style="font-size: 9px; color: #10b981; font-weight: 700;">✓ Todos foram alocados nesta escala!</span>';
+      if (todosColaboradores.length === 0) {
+        listEl.innerHTML = '<span style="font-size: 9px; color: #94a3b8; font-weight: 700;">Nenhum colaborador cadastrado.</span>';
         return;
       }
 
       let htmlChips = '';
-      for (let i = 0; i < naoEscalados.length; i++) {
-        const nome = naoEscalados[i];
+      for (let i = 0; i < todosColaboradores.length; i++) {
+        const nome = todosColaboradores[i];
         
         htmlChips += `
           <div class="chip-user">
