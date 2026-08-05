@@ -315,6 +315,68 @@
   <!-- ÁREA OCULTA PARA CAPTURA DE IMAGEM -->
   <div id="captureArea"></div>
 
+  <!-- SCRIPT DO FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBEk25E4X6ksYtQds8we89mZ1rGo9JH0s4",
+      authDomain: "escala-am.firebaseapp.com",
+      projectId: "escala-am",
+      storageBucket: "escala-am.firebasestorage.app",
+      messagingSenderId: "434278194465",
+      appId: "1:434278194465:web:ca3ad65172e563cdaeb260",
+      measurementId: "G-RR6HF9P1QC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    const docRef = doc(db, "escalas", "dados_gerais");
+
+    // Salva no Firebase
+    window.salvarEscala = async function() {
+      try {
+        await setDoc(docRef, {
+          colaboradores: window.colaboradores,
+          escalaPorColaborador: window.escalaPorColaborador,
+          skillsColaboradores: window.skillsColaboradores,
+          escalaRecebimento: window.escalaRecebimento,
+          escalaDoubleCheck: window.escalaDoubleCheck
+        });
+        alert('🔥 Escala salva com sucesso no Firebase!');
+      } catch (e) {
+        console.error("Erro ao salvar no Firebase: ", e);
+        alert('❌ Erro ao salvar dados no Firebase.');
+      }
+    };
+
+    // Sincronização em tempo real do Firebase
+    onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.colaboradores) window.colaboradores = data.colaboradores;
+        if (data.escalaPorColaborador) window.escalaPorColaborador = data.escalaPorColaborador;
+        if (data.skillsColaboradores) window.skillsColaboradores = data.skillsColaboradores;
+        if (data.escalaRecebimento) window.escalaRecebimento = data.escalaRecebimento;
+        if (data.escalaDoubleCheck) window.escalaDoubleCheck = data.escalaDoubleCheck;
+
+        localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
+        localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
+        localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
+        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
+        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
+
+        if (window.renderEstruturas) {
+          window.renderEstruturas();
+        }
+      }
+    });
+  </script>
+
   <script>
     const diasSemana = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
     const nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
@@ -365,20 +427,20 @@
       { id: 'pacotinhos', label: 'PACOTINHOS', qtd: 5 }
     ];
 
-    let colaboradores = JSON.parse(localStorage.getItem('colaboradores_v18')) || [
+    window.colaboradores = JSON.parse(localStorage.getItem('colaboradores_v18')) || [
       'FERNANDA LEAO TEIXEIRA', 'MILENA SILVA SOARES', 'AMANDA CECILIA', 'DIESLEY HENRIQUE', 
       'IGOR MATHEUS', 'JOSENICE MARINHO', 'LUCAS VINICIUS', 'MARCELO AUGUSTO', 
       'SOLANGE DE JESUS', 'YASMIN SILVA', 'HELDER SILVA', 'CAUÃ OLIVEIRA', 'OTAVIO'
     ];
 
-    let escalaPorColaborador = JSON.parse(localStorage.getItem('escala_colaborador_v18')) || {};
-    let skillsColaboradores = JSON.parse(localStorage.getItem('skills_v18')) || {};
-    let escalaRecebimento = JSON.parse(localStorage.getItem('escala_rec_v18')) || {};
-    let escalaDoubleCheck = JSON.parse(localStorage.getItem('escala_dc_v18')) || {};
+    window.escalaPorColaborador = JSON.parse(localStorage.getItem('escala_colaborador_v18')) || {};
+    window.skillsColaboradores = JSON.parse(localStorage.getItem('skills_v18')) || {};
+    window.escalaRecebimento = JSON.parse(localStorage.getItem('escala_rec_v18')) || {};
+    window.escalaDoubleCheck = JSON.parse(localStorage.getItem('escala_dc_v18')) || {};
 
     diasSemana.forEach(dia => {
-      if (!escalaRecebimento[dia]) escalaRecebimento[dia] = {};
-      if (!escalaDoubleCheck[dia]) escalaDoubleCheck[dia] = {};
+      if (!window.escalaRecebimento[dia]) window.escalaRecebimento[dia] = {};
+      if (!window.escalaDoubleCheck[dia]) window.escalaDoubleCheck[dia] = {};
     });
 
     function formatarNomeAbreviado(nomeCompleto) {
@@ -418,18 +480,18 @@
       }
     }
 
-    function renderEstruturas() {
+    window.renderEstruturas = function() {
       renderRecebimento();
       renderDoubleCheck();
       aplicarFiltroExibicaoDias();
       atualizarNaoEscalados();
       validarDuplicidades();
-    }
+    };
 
     function buildOptionsHTML() {
       let optionsHtml = '<option value="">- Selecione -</option>';
-      for (let i = 0; i < colaboradores.length; i++) {
-        optionsHtml += `<option value="${colaboradores[i]}">${colaboradores[i]}</option>`;
+      for (let i = 0; i < window.colaboradores.length; i++) {
+        optionsHtml += `<option value="${window.colaboradores[i]}">${window.colaboradores[i]}</option>`;
       }
       return optionsHtml;
     }
@@ -538,9 +600,9 @@
       container.innerHTML = htmlFinal;
 
       diasSemana.forEach(dia => {
-        Object.keys(escalaRecebimento[dia]).forEach(key => {
+        Object.keys(window.escalaRecebimento[dia] || {}).forEach(key => {
           const el = document.getElementById(`rec_${dia}_${key}`);
-          if (el) el.value = escalaRecebimento[dia][key];
+          if (el) el.value = window.escalaRecebimento[dia][key];
         });
       });
     }
@@ -618,9 +680,9 @@
       container.innerHTML = htmlFinal;
 
       diasSemana.forEach(dia => {
-        Object.keys(escalaDoubleCheck[dia]).forEach(key => {
+        Object.keys(window.escalaDoubleCheck[dia] || {}).forEach(key => {
           const el = document.getElementById(`dc_${dia}_${key}`);
-          if (el) el.value = escalaDoubleCheck[dia][key];
+          if (el) el.value = window.escalaDoubleCheck[dia][key];
         });
       });
     }
@@ -652,11 +714,11 @@
 
     function salvarSelecao(tipo, dia, key, val) {
       if (tipo === 'rec') {
-        escalaRecebimento[dia][key] = val;
-        localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+        window.escalaRecebimento[dia][key] = val;
+        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
       } else {
-        escalaDoubleCheck[dia][key] = val;
-        localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+        window.escalaDoubleCheck[dia][key] = val;
+        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
       }
       atualizarNaoEscalados();
       validarDuplicidades();
@@ -664,7 +726,7 @@
 
     function renderTabelaDinamica() {
       const setor = document.getElementById('pivotSetorSelect').value;
-      const escalaData = (setor === 'rec') ? escalaRecebimento : escalaDoubleCheck;
+      const escalaData = (setor === 'rec') ? window.escalaRecebimento : window.escalaDoubleCheck;
       
       const funcoesSetor = (setor === 'rec') 
         ? [
@@ -686,7 +748,7 @@
           ];
 
       const matriz = {};
-      colaboradores.forEach(nome => {
+      window.colaboradores.forEach(nome => {
         matriz[nome] = {};
         funcoesSetor.forEach(f => matriz[nome][f.id] = 0);
       });
@@ -729,7 +791,7 @@
       funcoesSetor.forEach(f => totPorFuncao[f.id] = 0);
       let grandTotal = 0;
 
-      colaboradores.forEach(nome => {
+      window.colaboradores.forEach(nome => {
         tableHtml += `<tr><td class="pivot-col-operator">👤 ${nome}</td>`;
         let totalOperador = 0;
 
@@ -761,13 +823,13 @@
     function resetarDia(tipo, dia) {
       if (confirm(`Tem certeza que deseja limpar a escala de ${nomesDias[dia]}?`)) {
         if (tipo === 'rec') {
-          escalaRecebimento[dia] = {};
-          localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+          window.escalaRecebimento[dia] = {};
+          localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
         } else {
-          escalaDoubleCheck[dia] = {};
-          localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+          window.escalaDoubleCheck[dia] = {};
+          localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
         }
-        renderEstruturas();
+        window.renderEstruturas();
       }
     }
 
@@ -779,33 +841,33 @@
       if (confirm(`Tem certeza que deseja LIMPAR TODOS OS DIAS da escala (${tiposEscala[tipoEscalaVal].label}) do ${setor}?`)) {
         diasAlvo.forEach(dia => {
           if (abaAtual === 'recebimento') {
-            escalaRecebimento[dia] = {};
+            window.escalaRecebimento[dia] = {};
           } else {
-            escalaDoubleCheck[dia] = {};
+            window.escalaDoubleCheck[dia] = {};
           }
         });
 
         if (abaAtual === 'recebimento') {
-          localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+          localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
         } else {
-          localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+          localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
         }
 
-        renderEstruturas();
+        window.renderEstruturas();
       }
     }
 
     function abrirModalSkills() {
       let html = '<table class="custom-table"><thead><tr><th>Colaborador</th><th>Competências / Funções Habilitadas</th></tr></thead><tbody>';
       
-      colaboradores.forEach(nome => {
-        if (!skillsColaboradores[nome]) {
-          skillsColaboradores[nome] = funcoesDisponiveis.map(f => f.id);
+      window.colaboradores.forEach(nome => {
+        if (!window.skillsColaboradores[nome]) {
+          window.skillsColaboradores[nome] = funcoesDisponiveis.map(f => f.id);
         }
 
         let checks = '<div class="skill-checkbox-grid">';
         funcoesDisponiveis.forEach(f => {
-          const temSkill = skillsColaboradores[nome].includes(f.id);
+          const temSkill = window.skillsColaboradores[nome].includes(f.id);
           checks += `
             <label class="skill-item">
               <input type="checkbox" ${temSkill ? 'checked' : ''} onchange="alternarSkill('${nome}', '${f.id}')">
@@ -824,18 +886,18 @@
     }
 
     function alternarSkill(nome, skillId) {
-      if (!skillsColaboradores[nome]) skillsColaboradores[nome] = [];
+      if (!window.skillsColaboradores[nome]) window.skillsColaboradores[nome] = [];
       
-      if (skillsColaboradores[nome].includes(skillId)) {
-        skillsColaboradores[nome] = skillsColaboradores[nome].filter(s => s !== skillId);
+      if (window.skillsColaboradores[nome].includes(skillId)) {
+        window.skillsColaboradores[nome] = window.skillsColaboradores[nome].filter(s => s !== skillId);
       } else {
-        skillsColaboradores[nome].push(skillId);
+        window.skillsColaboradores[nome].push(skillId);
       }
-      localStorage.setItem('skills_v18', JSON.stringify(skillsColaboradores));
+      localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
     }
 
     function colaboradorTrabalhaNoDia(nome, dia) {
-      const config = escalaPorColaborador[nome];
+      const config = window.escalaPorColaborador[nome];
       if (!config) return true;
       const tipo = tiposEscala[config.tipoEscala];
       if (!tipo) return true;
@@ -843,8 +905,8 @@
     }
 
     function colaboradorAptoParaFuncao(nome, funcao) {
-      if (!skillsColaboradores[nome]) return true;
-      return skillsColaboradores[nome].includes(funcao);
+      if (!window.skillsColaboradores[nome]) return true;
+      return window.skillsColaboradores[nome].includes(funcao);
     }
 
     function obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcao, dia, maximoUso = 3) {
@@ -862,7 +924,7 @@
     }
 
     function executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana) {
-      escalaRecebimento[dia] = {};
+      window.escalaRecebimento[dia] = {};
 
       const mesasCompletas = ['m1_2', 'm3_4', 'm5_6'];
       const slotsCompletos = ['abastecedor', 'bipador_1', 'etiquetador_1', 'bipador_2', 'etiquetador_2', 'sorting'];
@@ -870,11 +932,11 @@
       mesasCompletas.forEach(pairId => {
         slotsCompletos.forEach(slot => {
           const funcaoNome = slot.includes('bipador') ? 'bipador' : (slot.includes('etiquetador') ? 'etiquetador' : slot);
-          const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+          const candidatos = [...window.colaboradores].sort(() => Math.random() - 0.5);
           const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcaoNome, dia, 3);
 
           if (escolhido) {
-            escalaRecebimento[dia][`${pairId}_${slot}`] = escolhido;
+            window.escalaRecebimento[dia][`${pairId}_${slot}`] = escolhido;
             jaAlocadosNoDia.add(escolhido);
             usoFuncaoSemana[`${escolhido}|${funcaoNome}`] = (usoFuncaoSemana[`${escolhido}|${funcaoNome}`] || 0) + 1;
           }
@@ -884,31 +946,31 @@
       const slotsMesa78 = ['bipador_1', 'etiquetador_1'];
       slotsMesa78.forEach(slot => {
         const funcaoNome = slot.includes('bipador') ? 'bipador' : 'etiquetador';
-        const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+        const candidatos = [...window.colaboradores].sort(() => Math.random() - 0.5);
         const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcaoNome, dia, 3);
 
         if (escolhido) {
-          escalaRecebimento[dia][`m7_8_${slot}`] = escolhido;
+          window.escalaRecebimento[dia][`m7_8_${slot}`] = escolhido;
           jaAlocadosNoDia.add(escolhido);
           usoFuncaoSemana[`${escolhido}|${funcaoNome}`] = (usoFuncaoSemana[`${escolhido}|${funcaoNome}`] || 0) + 1;
         }
       });
 
       for (let i = 1; i <= 2; i++) {
-        const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+        const candidatos = [...window.colaboradores].sort(() => Math.random() - 0.5);
         const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, 'gaioleiro', dia, 3);
         if (escolhido) {
-          escalaRecebimento[dia][`gaioleiro_${i}`] = escolhido;
+          window.escalaRecebimento[dia][`gaioleiro_${i}`] = escolhido;
           jaAlocadosNoDia.add(escolhido);
           usoFuncaoSemana[`${escolhido}|gaioleiro`] = (usoFuncaoSemana[`${escolhido}|gaioleiro`] || 0) + 1;
         }
       }
 
       for (let i = 1; i <= 4; i++) {
-        const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+        const candidatos = [...window.colaboradores].sort(() => Math.random() - 0.5);
         const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, 'distribuicao_volumosos', dia, 3);
         if (escolhido) {
-          escalaRecebimento[dia][`distribuicao_volumosos_${i}`] = escolhido;
+          window.escalaRecebimento[dia][`distribuicao_volumosos_${i}`] = escolhido;
           jaAlocadosNoDia.add(escolhido);
           usoFuncaoSemana[`${escolhido}|distribuicao_volumosos`] = (usoFuncaoSemana[`${escolhido}|distribuicao_volumosos`] || 0) + 1;
         }
@@ -916,10 +978,10 @@
 
       funcoesExtrasRec.forEach(ext => {
         for (let i = 1; i <= ext.qtd; i++) {
-          const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+          const candidatos = [...window.colaboradores].sort(() => Math.random() - 0.5);
           const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, ext.id, dia, 3);
           if (escolhido) {
-            escalaRecebimento[dia][`extra_${ext.id}_${i}`] = escolhido;
+            window.escalaRecebimento[dia][`extra_${ext.id}_${i}`] = escolhido;
             jaAlocadosNoDia.add(escolhido);
             usoFuncaoSemana[`${escolhido}|${ext.id}`] = (usoFuncaoSemana[`${escolhido}|${ext.id}`] || 0) + 1;
           }
@@ -938,18 +1000,18 @@
           const jaAlocadosNoDia = new Set();
           executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana);
         });
-        localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
       } else {
         diasAlvo.forEach((dia) => {
-          escalaDoubleCheck[dia] = {};
+          window.escalaDoubleCheck[dia] = {};
           const jaAlocadosNoDia = new Set();
-          const candidatosDoDia = [...colaboradores].sort(() => Math.random() - 0.5);
+          const candidatosDoDia = [...window.colaboradores].sort(() => Math.random() - 0.5);
 
           for (let m = 1; m <= 12; m++) {
             for (let pos = 1; pos <= 2; pos++) {
               const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, 'mesa_dc', dia, 3);
               if (escolhido) {
-                escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = escolhido;
+                window.escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = escolhido;
                 jaAlocadosNoDia.add(escolhido);
                 usoFuncaoSemana[`${escolhido}|mesa_dc`] = (usoFuncaoSemana[`${escolhido}|mesa_dc`] || 0) + 1;
               }
@@ -960,17 +1022,17 @@
             for (let i = 1; i <= ext.qtd; i++) {
               const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, ext.id, dia, 3);
               if (escolhido) {
-                escalaDoubleCheck[dia][`${ext.id}_${i}`] = escolhido;
+                window.escalaDoubleCheck[dia][`${ext.id}_${i}`] = escolhido;
                 jaAlocadosNoDia.add(escolhido);
                 usoFuncaoSemana[`${escolhido}|${ext.id}`] = (usoFuncaoSemana[`${escolhido}|${ext.id}`] || 0) + 1;
               }
             }
           });
         });
-        localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
       }
 
-      renderEstruturas();
+      window.renderEstruturas();
     }
 
     function sortearDia(tipo, dia) {
@@ -978,27 +1040,27 @@
         const jaAlocadosNoDia = new Set();
         const usoFuncaoSemana = {};
         executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana);
-        localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
       } else {
-        const disponiveis = colaboradores.filter(c => colaboradorTrabalhaNoDia(c, dia));
+        const disponiveis = window.colaboradores.filter(c => colaboradorTrabalhaNoDia(c, dia));
         const embaralhados = [...disponiveis].sort(() => Math.random() - 0.5);
         let idx = 0;
 
-        escalaDoubleCheck[dia] = {};
+        window.escalaDoubleCheck[dia] = {};
         for (let m = 1; m <= 12; m++) {
           for (let pos = 1; pos <= 2; pos++) {
-            if (idx < embaralhados.length) escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = embaralhados[idx++];
+            if (idx < embaralhados.length) window.escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = embaralhados[idx++];
           }
         }
         funcoesDC.forEach(ext => {
           for (let i = 1; i <= ext.qtd; i++) {
-            if (idx < embaralhados.length) escalaDoubleCheck[dia][`${ext.id}_${i}`] = embaralhados[idx++];
+            if (idx < embaralhados.length) window.escalaDoubleCheck[dia][`${ext.id}_${i}`] = embaralhados[idx++];
           }
         });
-        localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
       }
 
-      renderEstruturas();
+      window.renderEstruturas();
     }
 
     function validarDuplicidades() {
@@ -1065,7 +1127,7 @@
       novosNomesTemporarios = [];
 
       nomesProcessados.forEach(nome => {
-        if (!colaboradores.includes(nome) && !novosNomesTemporarios.includes(nome)) {
+        if (!window.colaboradores.includes(nome) && !novosNomesTemporarios.includes(nome)) {
           novosNomesTemporarios.push(nome);
         }
       });
@@ -1121,49 +1183,49 @@
 
     function salvarEscalasNovos() {
       novosNomesTemporarios.forEach((nome, idx) => {
-        if (!colaboradores.includes(nome)) {
-          colaboradores.push(nome);
+        if (!window.colaboradores.includes(nome)) {
+          window.colaboradores.push(nome);
         }
 
         const tipoEscala = document.getElementById(`sel_escala_${idx}`).value;
         const domingoMes = document.getElementById(`sel_domingo_${idx}`).value;
 
-        escalaPorColaborador[nome] = { tipoEscala, domingoMes };
+        window.escalaPorColaborador[nome] = { tipoEscala, domingoMes };
       });
 
-      localStorage.setItem('colaboradores_v18', JSON.stringify(colaboradores));
-      localStorage.setItem('escala_colaborador_v18', JSON.stringify(escalaPorColaborador));
+      localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
+      localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
 
       document.getElementById('novosNomesInput').value = '';
       novosNomesTemporarios = [];
       fecharModais();
-      renderEstruturas();
+      window.renderEstruturas();
     }
 
     function resetarBancoNomes() {
       if (confirm('Tem certeza que deseja apagar TODOS os colaboradores e zerar as escalas?')) {
-        colaboradores = [];
-        escalaPorColaborador = {};
+        window.colaboradores = [];
+        window.escalaPorColaborador = {};
         diasSemana.forEach(dia => {
-          escalaRecebimento[dia] = {};
-          escalaDoubleCheck[dia] = {};
+          window.escalaRecebimento[dia] = {};
+          window.escalaDoubleCheck[dia] = {};
         });
         localStorage.removeItem('colaboradores_v18');
         localStorage.removeItem('escala_colaborador_v18');
         localStorage.removeItem('escala_rec_v18');
         localStorage.removeItem('escala_dc_v18');
         localStorage.removeItem('skills_v18');
-        renderEstruturas();
+        window.renderEstruturas();
       }
     }
 
     function removerColaborador(nome) {
       if (confirm(`Remover ${nome}?`)) {
-        colaboradores = colaboradores.filter(c => c !== nome);
-        delete escalaPorColaborador[nome];
-        localStorage.setItem('colaboradores_v18', JSON.stringify(colaboradores));
-        localStorage.setItem('escala_colaborador_v18', JSON.stringify(escalaPorColaborador));
-        renderEstruturas();
+        window.colaboradores = window.colaboradores.filter(c => c !== nome);
+        delete window.escalaPorColaborador[nome];
+        localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
+        localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
+        window.renderEstruturas();
       }
     }
 
@@ -1172,10 +1234,10 @@
       const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
       const domMesVal = document.getElementById('filtroDomingoMes').value;
       const diasAlvo = tiposEscala[tipoEscalaVal].dias;
-      const escalaAtualData = (abaAtual === 'recebimento') ? escalaRecebimento : escalaDoubleCheck;
+      const escalaAtualData = (abaAtual === 'recebimento') ? window.escalaRecebimento : window.escalaDoubleCheck;
       
-      const pertencentesEscala = colaboradores.filter(c => {
-        const config = escalaPorColaborador[c];
+      const pertencentesEscala = window.colaboradores.filter(c => {
+        const config = window.escalaPorColaborador[c];
         if (!config) return true;
         return config.tipoEscala === tipoEscalaVal && config.domingoMes === domMesVal;
       });
@@ -1306,9 +1368,7 @@
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     }
 
-    function salvarEscala() { alert('Histórico salvo no navegador com sucesso!'); }
-
-    renderEstruturas();
+    window.renderEstruturas();
   </script>
 </body>
 </html>
