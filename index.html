@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Escalas Avançado Pro</title>
+  
+  <!-- Bibliotecas Externas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; background: #0d0f17; color: #f1f5f9; }
+    
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+    .top-bar h1 { font-size: 18px; font-weight: 800; margin: 0; }
+    .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+    
+    .btn { padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+    .btn-outline-blue { background: transparent; border-color: #3b82f6; color: #60a5fa; }
+    .btn-outline-purple { background: transparent; border-color: #a855f7; color: #c084fc; }
+    .btn-outline-yellow { background: transparent; border-color: #eab308; color: #fde047; }
+    .btn-outline-red { background: transparent; border-color: #ef4444; color: #f87171; }
+    .btn-purple-solid { background: #8b5cf6; color: white; border: none; }
+    .btn-blue-solid { background: #3b82f6; color: white; border: none; }
+    .btn-green-solid { background: #10b981; color: white; border: none; }
+    .btn-red-solid { background: #ef4444; color: white; border: none; }
+    .btn:hover { opacity: 0.85; }
+
+    /* NAVEGAÇÃO DE ABAS */
+    .tabs-nav { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #262a40; padding-bottom: 8px; }
+    .tab-btn { background: #11131f; color: #94a3b8; border: 1px solid #262a40; padding: 8px 16px; border-radius: 6px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: #3b82f6; color: #ffffff; border-color: #60a5fa; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+
+    /* CABEÇALHO FIXO */
+    .sticky-header-panel {
+      position: sticky; top: 0; z-index: 1000; background: #181b29; border: 1px solid #3b82f6; border-radius: 10px; padding: 12px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 10px;
+    }
+    .panel-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+    
+    .add-names-box { flex: 1; min-width: 280px; }
+    .add-names-box h3, .search-box h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; margin: 0 0 5px 0; color: #60a5fa; }
+    .add-names-controls { display: flex; gap: 6px; }
+    .add-names-controls textarea { flex: 1; height: 38px; background: #11131f; border: 1px solid #334155; border-radius: 6px; padding: 6px; color: white; font-size: 10px; resize: none; font-family: inherit; }
+
+    .search-box { flex: 1; min-width: 200px; }
+    .search-input { width: 100%; height: 38px; background: #11131f; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; color: #fde047; font-size: 11px; font-weight: bold; }
+
+    .unallocated-box { flex: 2.5; min-width: 320px; background: #11131f; border: 1px solid #262a40; border-radius: 8px; padding: 8px; }
+    .unallocated-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
+    .unallocated-title { font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; }
+    .filter-select { background: #181b29; border: 1px solid #334155; border-radius: 4px; color: white; font-size: 10px; padding: 4px 6px; }
+
+    .unallocated-chips-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 60px; overflow-y: auto; padding-right: 4px; }
+    .chip-user { background: #1e293b; border: 1px solid #334155; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; display: flex; align-items: center; gap: 5px; color: #f1f5f9; }
+    .chip-user .remove-btn { color: #ef4444; cursor: pointer; font-weight: bold; font-size: 10px; }
+
+    /* BLOCOS DOS DIAS */
+    .day-block { background: #181b29; border-radius: 10px; border: 1px solid #262a40; margin-bottom: 15px; overflow: hidden; }
+    .day-block.day-hidden { display: none !important; }
+    .day-header { padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; text-transform: uppercase; font-size: 12px; }
+    .day-header-actions { display: flex; gap: 6px; }
+    .day-header.segunda { background: #334155; }
+    .day-header.terca { background: #8b5cf6; }
+    .day-header.quarta { background: #0284c7; }
+    .day-header.quinta { background: #059669; }
+    .day-header.sexta { background: #d97706; }
+    .day-header.sabado { background: #dc2626; }
+    .day-header.domingo { background: #475569; }
+
+    .btn-sm { padding: 3px 8px; font-size: 10px; border-radius: 4px; }
+
+    /* LAYOUTS DAS MESAS */
+    .mesas-row-container { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 10px; padding: 10px; overflow-x: auto; }
+    .mesas-column-group { display: flex; flex-direction: column; gap: 10px; }
+    .sub-row-container { display: flex; gap: 10px; }
+
+    .mesa-layout-card { background: #11131f; border: 1px solid #262a40; border-radius: 8px; padding: 8px; flex: 0 0 260px; }
+    .dc-pair-card { background: #11131f; border: 1px solid #262a40; border-radius: 8px; padding: 8px; flex: 0 0 210px; display: flex; flex-direction: column; gap: 10px; }
+    .dc-single-mesa { background: #181b29; border: 1px solid #262a40; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .extra-card { background: #11131f; border: 1px solid #3b82f6; border-radius: 8px; padding: 8px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 4px; }
+    .card-title { text-align: center; font-weight: 800; font-size: 10px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; }
+
+    .mesa-cross-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: center; }
+
+    .slot { background: #181b29; border: 1px solid #334155; border-radius: 4px; padding: 3px; display: flex; flex-direction: column; gap: 2px; }
+    .slot label { font-size: 8px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+    .slot select { width: 100%; background: #0d0f17; color: #f1f5f9; border: 1px solid #262a40; padding: 4px 2px; border-radius: 3px; font-size: 9.5px; font-weight: 600; outline: none; transition: all 0.2s; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+
+    /* HIGHLIGHTS E REPETIÇÕES */
+    .slot select.duplicate-same-day { background-color: #064e3b !important; color: #6ee7b7 !important; border: 1px solid #10b981 !important; font-weight: 800; }
+    .slot select.duplicate-yellow { background-color: #713f12 !important; color: #fef08a !important; border: 1px solid #eab308 !important; font-weight: 800; }
+    .slot select.duplicate-purple { background-color: #581c87 !important; color: #e9d5ff !important; border: 1px solid #c084fc !important; font-weight: 800; }
+    .slot select.duplicate-red { background-color: #7f1d1d !important; color: #fca5a5 !important; border: 1px solid #ef4444 !important; font-weight: 800; }
+    .slot select.highlight-search { background-color: #0284c7 !important; color: #ffffff !important; border: 2px solid #38bdf8 !important; font-weight: 900; }
+
+    .pos-abastecedor { grid-column: 1 / span 2; border-color: #d97706; }
+    .pos-abastecedor label { color: #f59e0b; }
+    .pos-left { grid-column: 1; display: flex; flex-direction: column; gap: 4px; }
+    .pos-right { grid-column: 2; display: flex; flex-direction: column; gap: 4px; }
+    .pos-sorting { grid-column: 1 / span 2; border-color: #059669; }
+    .pos-sorting label { color: #10b981; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* TABELA DINÂMICA */
+    .pivot-container { background: #181b29; border: 1px solid #262a40; border-radius: 10px; padding: 15px; overflow-x: auto; }
+    .pivot-header-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .pivot-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; }
+    .pivot-table th, .pivot-table td { padding: 8px 10px; border: 1px solid #262a40; }
+    .pivot-table th { background: #11131f; color: #38bdf8; font-weight: 800; text-transform: uppercase; }
+    .pivot-table tr:hover { background: #1e2438; }
+    .pivot-col-operator { text-align: left; font-weight: 800; color: #f1f5f9; background: #141724; }
+    .pivot-cell-val { font-weight: 700; color: #64748b; }
+    .pivot-cell-val.active-count { color: #38bdf8; font-size: 12px; }
+    .pivot-cell-val.high-count { color: #4ade80; font-size: 12px; font-weight: 900; }
+    .pivot-total-col { background: #1e293b; color: #fde047; font-weight: 800; }
+
+    /* MODAIS */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-card { background: #181b29; border: 1px solid #3b82f6; border-radius: 10px; width: 90%; max-width: 850px; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+    .modal-header h2 { margin: 0; font-size: 16px; color: #60a5fa; }
+    .close-modal { cursor: pointer; color: #ef4444; font-weight: bold; font-size: 18px; }
+
+    table.custom-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; }
+    table.custom-table th, table.custom-table td { padding: 8px; border: 1px solid #334155; }
+    table.custom-table th { background: #11131f; color: #38bdf8; }
+    table.custom-table tr:nth-child(even) { background: #11131f; }
+
+    /* SKILLS & ESCALAS MODAL CSS */
+    .skill-checkbox-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+    .skill-item { background: #11131f; border: 1px solid #334155; padding: 6px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+    /* ÁREA OCULTA PARA CAPTURA DE IMAGEM */
+    #captureArea { position: absolute; left: -9999px; top: -9999px; background: #0d0f17; padding: 25px; border-radius: 10px; width: 1400px; color: #f1f5f9; }
+    #captureArea .mesas-row-container { flex-wrap: wrap !important; }
+    .print-name-box { background: #0d0f17; border: 1px solid #262a40; color: #60a5fa; font-weight: 800; font-size: 11px; padding: 5px 8px; border-radius: 4px; min-height: 24px; display: flex; align-items: center; }
+    .print-name-box.empty { color: #475569; font-weight: normal; }
+
+    #previewContainer img {
+      width: 100%;
+      height: auto;
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <h1>Gerenciador de Escalas Pro</h1>
+    <div class="action-buttons">
+      <button class="btn btn-outline-yellow" onclick="abrirModalSkills()">🎯 Skills / Competências</button>
+      <button class="btn btn-outline-blue" onclick="abrirModalPrint()">📷 Imagem (.png HD)</button>
+      <button class="btn btn-outline-purple" onclick="sortearSemana()">🎲 Sortear Escala</button>
+      <button class="btn btn-outline-red" onclick="resetarSemanaAtual()">💥 Limpar Escala</button>
+      <button class="btn btn-purple-solid" onclick="salvarEscala()">💾 Salvar</button>
+    </div>
+  </div>
+
+  <!-- NAVEGAÇÃO ENTRE ABAS -->
+  <div class="tabs-nav">
+    <button class="tab-btn active" onclick="trocarAba('recebimento')">📦 RECEBIMENTO GERAL</button>
+    <button class="tab-btn" onclick="trocarAba('doublecheck')">🔍 DOUBLE CHECK</button>
+    <button class="tab-btn" onclick="trocarAba('dinamica')">📊 TABELA DINÂMICA (ANÁLISE)</button>
+  </div>
+
+  <!-- CABEÇALHO FIXO COM SELEÇÃO DE ESCALAS -->
+  <div class="sticky-header-panel" id="mainHeaderPanel">
+    <div class="panel-row">
+      <div class="add-names-box">
+        <h3>Adicionar Colaboradores</h3>
+        <div class="add-names-controls">
+          <textarea id="novosNomesInput" placeholder="Cole vários nomes aqui..."></textarea>
+          <button class="btn btn-blue-solid" onclick="adicionarVariosColaboradores()">+ Add</button>
+          <button class="btn btn-red-solid" onclick="resetarBancoNomes()">💥 Zerar</button>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <h3>🔍 Localizar Operador</h3>
+        <input type="text" id="searchInput" class="search-input" placeholder="Digite o nome..." oninput="buscarColaborador()">
+      </div>
+
+      <div class="unallocated-box">
+        <div class="unallocated-header">
+          <span class="unallocated-title" id="countInfo">NÃO ALOCADOS (0)</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <div>
+              <label style="font-size: 9px; color: #94a3b8; font-weight: bold;">Escala Exibida:</label>
+              <select id="filtroEscalaTipo" class="filter-select" onchange="aoMudarFiltroEscala()">
+                <option value="seg_sex">Segunda a Sexta</option>
+                <option value="qua_dom">Quarta a Domingo</option>
+                <option value="ter_dom">Terça a Domingo</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 9px; color: #94a3b8; font-weight: bold;">Domingo:</label>
+              <select id="filtroDomingoMes" class="filter-select" onchange="aoMudarFiltroEscala()">
+                <option value="dom1">1º Domingo</option>
+                <option value="dom2">2º Domingo</option>
+                <option value="dom3">3º Domingo</option>
+                <option value="dom4">4º Domingo</option>
+                <option value="dom5">5º Domingo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="unallocated-chips-container" id="listaNaoEscalados"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA 1: RECEBIMENTO GERAL -->
+  <div id="tab-recebimento" class="tab-content active">
+    <div id="diasContainerRecebimento"></div>
+  </div>
+
+  <!-- ABA 2: DOUBLE CHECK -->
+  <div id="tab-doublecheck" class="tab-content">
+    <div id="diasContainerDoubleCheck"></div>
+  </div>
+
+  <!-- ABA 3: TABELA DINÂMICA / FREQUÊNCIA DE OCORRÊNCIAS -->
+  <div id="tab-dinamica" class="tab-content">
+    <div class="pivot-container">
+      <div class="pivot-header-toolbar">
+        <div>
+          <h2 style="margin:0; font-size: 15px; color:#60a5fa;">📊 Matriz de Distribuição Semanal por Operador</h2>
+          <p style="margin: 3px 0 0 0; font-size: 11px; color:#94a3b8;">Acompanhe a quantidade total de vezes que cada operador passou por determinada função no ciclo atual.</p>
+        </div>
+        <div>
+          <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">Analisar Setor:</label>
+          <select id="pivotSetorSelect" class="filter-select" style="font-size: 11px; padding: 4px;" onchange="renderTabelaDinamica()">
+            <option value="rec">Recebimento Geral</option>
+            <option value="dc">Double Check</option>
+          </select>
+        </div>
+      </div>
+      <div id="pivotTableWrapper"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: ATRIBUIÇÃO DE ESCALA PARA NOVOS COLABORADORES -->
+  <div class="modal-overlay" id="modalNovosNomesEscala">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>📋 Atribuir Escalas aos Novos Colaboradores</h2>
+        <span class="close-modal" onclick="fecharModais()">✕</span>
+      </div>
+      <p style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">
+        Selecione a **Escala de Trabalho** e o **Domingo do Mês** para cada operador cadastrado.
+      </p>
+      <div id="novosNomesEscalaList"></div>
+      <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-green-solid" style="padding: 8px 16px; font-size: 12px;" onclick="salvarEscalasNovos()">Confirmar e Cadastrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: COMPETÊNCIAS / SKILLS -->
+  <div class="modal-overlay" id="modalSkills">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🎯 Matriz de Competências (Skills dos Operadores)</h2>
+        <span class="close-modal" onclick="fecharModais()">✕</span>
+      </div>
+      <p style="font-size: 11px; color: #94a3b8;">Marque as funções que cada operador está apto/treinado a realizar. O sorteio automático vai respeitar estas marcações.</p>
+      <div id="skillsListContainer"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: GERAR PRINT (IMAGEM) -->
+  <div class="modal-overlay" id="modalPrint">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>📷 Exportar Escala em Imagem (Alta Definição)</h2>
+        <span class="close-modal" onclick="fecharModais()">✕</span>
+      </div>
+      <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+        <div>
+          <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">Selecione a Escala a Imprimir:</label><br>
+          <select id="printEscalaSelect" class="filter-select" style="font-size: 12px; padding: 5px;">
+            <option value="atual">Escala Selecionada Atual</option>
+            <option value="todas">Todas as Escalas</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">Selecione o Setor:</label><br>
+          <select id="printSetorSelect" class="filter-select" style="font-size: 12px; padding: 5px;">
+            <option value="rec">Recebimento Geral</option>
+            <option value="dc">Double Check</option>
+          </select>
+        </div>
+        <div style="align-self: flex-end;">
+          <button class="btn btn-blue-solid" onclick="gerarPrintPreview()">Gerar Imagem HD</button>
+        </div>
+      </div>
+
+      <div id="previewContainer" style="text-align: center; min-height: 100px; border: 1px dashed #334155; padding: 10px; border-radius: 8px;">
+        <span style="font-size: 11px; color: #64748b;">Selecione as opções acima e clique em "Gerar Imagem HD"</span>
+      </div>
+
+      <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+        <a id="downloadImageBtn" style="display: none;" download="escala.png" class="btn btn-green-solid">📥 Baixar Imagem (.png HD)</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÁREA OCULTA PARA CAPTURA DE IMAGEM -->
+  <div id="captureArea"></div>
+
+  <script>
+    const diasSemana = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+    const nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+
+    const tiposEscala = {
+      seg_sex: { label: 'Segunda a Sexta', dias: ['segunda', 'terca', 'quarta', 'quinta', 'sexta'], folgas: ['sabado', 'domingo'] },
+      qua_dom: { label: 'Quarta a Domingo', dias: ['quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda', 'terca'] },
+      ter_dom: { label: 'Terça a Domingo', dias: ['terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda'] }
+    };
+
+    let abaAtual = 'recebimento';
+    let novosNomesTemporarios = [];
+
+    const paresMesas = [
+      { id: 'm1_2', label: 'Mesa 1 e Mesa 2' },
+      { id: 'm3_4', label: 'Mesa 3 e Mesa 4' },
+      { id: 'm5_6', label: 'Mesa 5 e Mesa 6' },
+      { id: 'm7_8', label: 'Mesa 7 e Mesa 8' },
+      { id: 'm9_10', label: 'Mesa 9 e Mesa 10' }
+    ];
+
+    const funcoesDisponiveis = [
+      { id: 'abastecedor', label: 'Abastecedor' },
+      { id: 'bipador', label: 'Bipador' },
+      { id: 'etiquetador', label: 'Etiquetador' },
+      { id: 'sorting', label: 'Sorting' },
+      { id: 'gaioleiro', label: 'Gaioleiro' },
+      { id: 'distribuicao_volumosos', label: 'Distribuição Volumosos' },
+      { id: 'handover', label: 'Handover' },
+      { id: 'dono_rua', label: 'Dono de Rua' },
+      { id: 'mesa_xpt', label: 'Mesa XPT' },
+      { id: 'mesa_dc', label: 'Mesa DC' },
+      { id: 'puxar_gaiolas', label: 'Puxar Gaiolas' },
+      { id: 'tratativa_pacotes', label: 'Tratativa' },
+      { id: 'pacotinhos', label: 'Pacotinhos' }
+    ];
+
+    // CARDS DE EXTRA DO RECEBIMENTO (SEM PUXAR GAIOLAS E TRATATIVA DE PACOTES)
+    const funcoesExtrasRec = [
+      { id: 'handover', label: 'HANDOVER', qtd: 6 },
+      { id: 'dono_rua', label: 'DONO DE RUA', qtd: 6 },
+      { id: 'mesa_xpt', label: 'MESA XPT', qtd: 6 }
+    ];
+
+    const funcoesDC = [
+      { id: 'puxar_gaiolas', label: 'PUXAR GAIOLAS', qtd: 4 },
+      { id: 'tratativa_pacotes', label: 'TRATATIVA DE PACOTES', qtd: 1 },
+      { id: 'pacotinhos', label: 'PACOTINHOS', qtd: 5 }
+    ];
+
+    let colaboradores = JSON.parse(localStorage.getItem('colaboradores_v18')) || [
+      'FERNANDA LEAO TEIXEIRA', 'MILENA SILVA SOARES', 'AMANDA CECILIA', 'DIESLEY HENRIQUE', 
+      'IGOR MATHEUS', 'JOSENICE MARINHO', 'LUCAS VINICIUS', 'MARCELO AUGUSTO', 
+      'SOLANGE DE JESUS', 'YASMIN SILVA', 'HELDER SILVA', 'CAUÃ OLIVEIRA', 'OTAVIO'
+    ];
+
+    let escalaPorColaborador = JSON.parse(localStorage.getItem('escala_colaborador_v18')) || {};
+    let skillsColaboradores = JSON.parse(localStorage.getItem('skills_v18')) || {};
+    let escalaRecebimento = JSON.parse(localStorage.getItem('escala_rec_v18')) || {};
+    let escalaDoubleCheck = JSON.parse(localStorage.getItem('escala_dc_v18')) || {};
+
+    diasSemana.forEach(dia => {
+      if (!escalaRecebimento[dia]) escalaRecebimento[dia] = {};
+      if (!escalaDoubleCheck[dia]) escalaDoubleCheck[dia] = {};
+    });
+
+    function formatarNomeAbreviado(nomeCompleto) {
+      if (!nomeCompleto || nomeCompleto.trim() === '') return '';
+      const partes = nomeCompleto.trim().split(/\s+/);
+      if (partes.length <= 2) return nomeCompleto;
+      return partes[0] + ' ' + partes[1];
+    }
+
+    function trocarAba(aba) {
+      abaAtual = aba;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      const panel = document.getElementById('mainHeaderPanel');
+
+      if (aba === 'recebimento') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('tab-recebimento').classList.add('active');
+        panel.style.display = 'flex';
+      } else if (aba === 'doublecheck') {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('tab-doublecheck').classList.add('active');
+        panel.style.display = 'flex';
+      } else if (aba === 'dinamica') {
+        document.querySelectorAll('.tab-btn')[2].classList.add('active');
+        document.getElementById('tab-dinamica').classList.add('active');
+        panel.style.display = 'none';
+        renderTabelaDinamica();
+      }
+
+      if (aba !== 'dinamica') {
+        aplicarFiltroExibicaoDias();
+        atualizarNaoEscalados();
+        validarDuplicidades();
+        buscarColaborador();
+      }
+    }
+
+    function renderEstruturas() {
+      renderRecebimento();
+      renderDoubleCheck();
+      aplicarFiltroExibicaoDias();
+      atualizarNaoEscalados();
+      validarDuplicidades();
+    }
+
+    function buildOptionsHTML() {
+      let optionsHtml = '<option value="">- Selecione -</option>';
+      for (let i = 0; i < colaboradores.length; i++) {
+        optionsHtml += `<option value="${colaboradores[i]}">${colaboradores[i]}</option>`;
+      }
+      return optionsHtml;
+    }
+
+    function renderRecebimento() {
+      const container = document.getElementById('diasContainerRecebimento');
+      const optionsHtml = buildOptionsHTML();
+      let htmlFinal = '';
+
+      diasSemana.forEach(dia => {
+        let contentHtml = '<div class="mesas-column-group"><div class="sub-row-container">';
+
+        paresMesas.forEach(pair => {
+          contentHtml += `
+            <div class="mesa-layout-card">
+              <div class="card-title">${pair.label}</div>
+              <div class="mesa-cross-grid">
+                <div class="slot pos-abastecedor"><label>Abastecedor</label><select data-funcao="abastecedor" id="rec_${dia}_${pair.id}_abastecedor" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_abastecedor', this.value)">${optionsHtml}</select></div>
+                <div class="pos-left">
+                  <div class="slot"><label>Bipador</label><select data-funcao="bipador" id="rec_${dia}_${pair.id}_bipador_1" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_bipador_1', this.value)">${optionsHtml}</select></div>
+                  <div class="slot"><label>Etiquetador</label><select data-funcao="etiquetador" id="rec_${dia}_${pair.id}_etiquetador_1" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_etiquetador_1', this.value)">${optionsHtml}</select></div>
+                </div>
+                <div class="pos-right">
+                  <div class="slot"><label>Bipador</label><select data-funcao="bipador" id="rec_${dia}_${pair.id}_bipador_2" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_bipador_2', this.value)">${optionsHtml}</select></div>
+                  <div class="slot"><label>Etiquetador</label><select data-funcao="etiquetador" id="rec_${dia}_${pair.id}_etiquetador_2" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_etiquetador_2', this.value)">${optionsHtml}</select></div>
+                </div>
+                <div class="slot pos-sorting"><label>Sorting</label><select data-funcao="sorting" id="rec_${dia}_${pair.id}_sorting" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_sorting', this.value)">${optionsHtml}</select></div>
+              </div>
+            </div>
+          `;
+        });
+
+        contentHtml += `</div><div class="sub-row-container">`;
+
+        // Card GAIOLEIRO
+        contentHtml += `
+          <div class="extra-card" style="flex: 0 0 260px; border-color: #8b5cf6;">
+            <div class="card-title" style="color: #c084fc;">GAIOLEIRO (2)</div>
+            <div class="slot">
+              <label>Gaioleiro 1</label>
+              <select data-funcao="gaioleiro" id="rec_${dia}_gaioleiro_1" onchange="salvarSelecao('rec', '${dia}', 'gaioleiro_1', this.value)">${optionsHtml}</select>
+            </div>
+            <div class="slot">
+              <label>Gaioleiro 2</label>
+              <select data-funcao="gaioleiro" id="rec_${dia}_gaioleiro_2" onchange="salvarSelecao('rec', '${dia}', 'gaioleiro_2', this.value)">${optionsHtml}</select>
+            </div>
+          </div>
+        `;
+
+        // Card DISTRIBUIÇÃO VOLUMOSOS
+        contentHtml += `
+          <div class="extra-card" style="flex: 0 0 530px; border-color: #10b981;">
+            <div class="card-title" style="color: #34d399;">DISTRIBUIÇÃO DE VOLUMOSOS (4)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <div class="slot">
+                <label>Volumosos 1</label>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_1" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_1', this.value)">${optionsHtml}</select>
+              </div>
+              <div class="slot">
+                <label>Volumosos 2</label>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_2" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_2', this.value)">${optionsHtml}</select>
+              </div>
+              <div class="slot">
+                <label>Volumosos 3</label>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_3" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_3', this.value)">${optionsHtml}</select>
+              </div>
+              <div class="slot">
+                <label>Volumosos 4</label>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_4" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_4', this.value)">${optionsHtml}</select>
+              </div>
+            </div>
+          </div>
+        `;
+
+        contentHtml += `</div></div>`;
+
+        funcoesExtrasRec.forEach(ext => {
+          let slotsExtraHtml = '';
+          for (let i = 1; i <= ext.qtd; i++) {
+            slotsExtraHtml += `
+              <div class="slot">
+                <label>Operador ${i}</label>
+                <select data-funcao="${ext.id}" id="rec_${dia}_extra_${ext.id}_${i}" onchange="salvarSelecao('rec', '${dia}', 'extra_${ext.id}_${i}', this.value)">
+                  ${optionsHtml}
+                </select>
+              </div>
+            `;
+          }
+          contentHtml += `<div class="extra-card"><div class="card-title">${ext.label} (${ext.qtd})</div>${slotsExtraHtml}</div>`;
+        });
+
+        htmlFinal += `
+          <div class="day-block" id="block_rec_${dia}">
+            <div class="day-header ${dia}">
+              <span>RECEBIMENTO GERAL - ${nomesDias[dia].toUpperCase()}</span>
+              <div class="day-header-actions">
+                <button class="btn btn-outline-purple btn-sm" onclick="sortearDia('rec', '${dia}')">🎲 Sortear Dia</button>
+                <button class="btn btn-outline-red btn-sm" onclick="resetarDia('rec', '${dia}')">🧹 Resetar</button>
+              </div>
+            </div>
+            <div class="mesas-row-container">${contentHtml}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = htmlFinal;
+
+      diasSemana.forEach(dia => {
+        Object.keys(escalaRecebimento[dia]).forEach(key => {
+          const el = document.getElementById(`rec_${dia}_${key}`);
+          if (el) el.value = escalaRecebimento[dia][key];
+        });
+      });
+    }
+
+    function renderDoubleCheck() {
+      const container = document.getElementById('diasContainerDoubleCheck');
+      const optionsHtml = buildOptionsHTML();
+      let htmlFinal = '';
+
+      diasSemana.forEach(dia => {
+        let contentHtml = '';
+
+        for (let m = 1; m <= 12; m += 2) {
+          const mTop = m;
+          const mBottom = m + 1;
+
+          contentHtml += `
+            <div class="dc-pair-card">
+              <div class="dc-single-mesa">
+                <div class="card-title">MESA ${mTop}</div>
+                <div class="slot">
+                  <label>Operador 1</label>
+                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mTop}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mTop}_1', this.value)">${optionsHtml}</select>
+                </div>
+                <div class="slot">
+                  <label>Operador 2</label>
+                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mTop}_2" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mTop}_2', this.value)">${optionsHtml}</select>
+                </div>
+              </div>
+
+              <div class="dc-single-mesa">
+                <div class="card-title">MESA ${mBottom}</div>
+                <div class="slot">
+                  <label>Operador 1</label>
+                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mBottom}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mBottom}_1', this.value)">${optionsHtml}</select>
+                </div>
+                <div class="slot">
+                  <label>Operador 2</label>
+                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mBottom}_2" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mBottom}_2', this.value)">${optionsHtml}</select>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        funcoesDC.forEach(ext => {
+          let slotsExtraHtml = '';
+          for (let i = 1; i <= ext.qtd; i++) {
+            slotsExtraHtml += `
+              <div class="slot">
+                <label>Operador ${i}</label>
+                <select data-funcao="${ext.id}" id="dc_${dia}_${ext.id}_${i}" onchange="salvarSelecao('dc', '${dia}', '${ext.id}_${i}', this.value)">
+                  ${optionsHtml}
+                </select>
+              </div>
+            `;
+          }
+          contentHtml += `<div class="extra-card"><div class="card-title">${ext.label}</div>${slotsExtraHtml}</div>`;
+        });
+
+        htmlFinal += `
+          <div class="day-block" id="block_dc_${dia}">
+            <div class="day-header ${dia}">
+              <span>DOUBLE CHECK - ${nomesDias[dia].toUpperCase()}</span>
+              <div class="day-header-actions">
+                <button class="btn btn-outline-purple btn-sm" onclick="sortearDia('dc', '${dia}')">🎲 Sortear Dia</button>
+                <button class="btn btn-outline-red btn-sm" onclick="resetarDia('dc', '${dia}')">🧹 Resetar</button>
+              </div>
+            </div>
+            <div class="mesas-row-container">${contentHtml}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = htmlFinal;
+
+      diasSemana.forEach(dia => {
+        Object.keys(escalaDoubleCheck[dia]).forEach(key => {
+          const el = document.getElementById(`dc_${dia}_${key}`);
+          if (el) el.value = escalaDoubleCheck[dia][key];
+        });
+      });
+    }
+
+    function aplicarFiltroExibicaoDias() {
+      if (abaAtual === 'dinamica') return;
+      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
+      const diasVisiveis = tiposEscala[tipoEscalaVal].dias;
+
+      diasSemana.forEach(dia => {
+        const blockRec = document.getElementById(`block_rec_${dia}`);
+        const blockDc = document.getElementById(`block_dc_${dia}`);
+        
+        if (diasVisiveis.includes(dia)) {
+          if (blockRec) blockRec.classList.remove('day-hidden');
+          if (blockDc) blockDc.classList.remove('day-hidden');
+        } else {
+          if (blockRec) blockRec.classList.add('day-hidden');
+          if (blockDc) blockDc.classList.add('day-hidden');
+        }
+      });
+    }
+
+    function aoMudarFiltroEscala() {
+      aplicarFiltroExibicaoDias();
+      atualizarNaoEscalados();
+      validarDuplicidades();
+    }
+
+    function salvarSelecao(tipo, dia, key, val) {
+      if (tipo === 'rec') {
+        escalaRecebimento[dia][key] = val;
+        localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+      } else {
+        escalaDoubleCheck[dia][key] = val;
+        localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+      }
+      atualizarNaoEscalados();
+      validarDuplicidades();
+    }
+
+    function renderTabelaDinamica() {
+      const setor = document.getElementById('pivotSetorSelect').value;
+      const escalaData = (setor === 'rec') ? escalaRecebimento : escalaDoubleCheck;
+      
+      const funcoesSetor = (setor === 'rec') 
+        ? [
+            { id: 'abastecedor', label: 'Abastecedor' },
+            { id: 'bipador', label: 'Bipador' },
+            { id: 'etiquetador', label: 'Etiquetador' },
+            { id: 'sorting', label: 'Sorting' },
+            { id: 'gaioleiro', label: 'Gaioleiro' },
+            { id: 'distribuicao_volumosos', label: 'Distr. Volumosos' },
+            { id: 'handover', label: 'Handover' },
+            { id: 'dono_rua', label: 'Dono de Rua' },
+            { id: 'mesa_xpt', label: 'Mesa XPT' }
+          ]
+        : [
+            { id: 'mesa_dc', label: 'Mesas DC' },
+            { id: 'puxar_gaiolas', label: 'Puxar Gaiolas' },
+            { id: 'tratativa_pacotes', label: 'Tratativa' },
+            { id: 'pacotinhos', label: 'Pacotinhos' }
+          ];
+
+      const matriz = {};
+      colaboradores.forEach(nome => {
+        matriz[nome] = {};
+        funcoesSetor.forEach(f => matriz[nome][f.id] = 0);
+      });
+
+      diasSemana.forEach(dia => {
+        const diaEscala = escalaData[dia] || {};
+        Object.keys(diaEscala).forEach(key => {
+          const operador = diaEscala[key];
+          if (operador && matriz[operador]) {
+            let funcId = '';
+            if (key.includes('abastecedor')) funcId = 'abastecedor';
+            else if (key.includes('bipador')) funcId = 'bipador';
+            else if (key.includes('etiquetador')) funcId = 'etiquetador';
+            else if (key.includes('sorting')) funcId = 'sorting';
+            else if (key.includes('gaioleiro')) funcId = 'gaioleiro';
+            else if (key.includes('distribuicao_volumosos')) funcId = 'distribuicao_volumosos';
+            else if (key.includes('handover')) funcId = 'handover';
+            else if (key.includes('dono_rua')) funcId = 'dono_rua';
+            else if (key.includes('mesa_xpt')) funcId = 'mesa_xpt';
+            else if (key.includes('dc_mesa')) funcId = 'mesa_dc';
+            else if (key.includes('puxar_gaiolas')) funcId = 'puxar_gaiolas';
+            else if (key.includes('tratativa_pacotes')) funcId = 'tratativa_pacotes';
+            else if (key.includes('pacotinhos')) funcId = 'pacotinhos';
+
+            if (funcId && matriz[operador][funcId] !== undefined) {
+              matriz[operador][funcId]++;
+            }
+          }
+        });
+      });
+
+      let tableHtml = `<table class="pivot-table"><thead><tr><th style="text-align:left;">Operador / Colaborador</th>`;
+      
+      funcoesSetor.forEach(f => {
+        tableHtml += `<th>${f.label}</th>`;
+      });
+      tableHtml += `<th class="pivot-total-col">Total Semanal</th></tr></thead><tbody>`;
+
+      const totPorFuncao = {};
+      funcoesSetor.forEach(f => totPorFuncao[f.id] = 0);
+      let grandTotal = 0;
+
+      colaboradores.forEach(nome => {
+        tableHtml += `<tr><td class="pivot-col-operator">👤 ${nome}</td>`;
+        let totalOperador = 0;
+
+        funcoesSetor.forEach(f => {
+          const val = matriz[nome][f.id] || 0;
+          totalOperador += val;
+          totPorFuncao[f.id] += val;
+
+          let cellClass = 'pivot-cell-val';
+          if (val === 1 || val === 2) cellClass += ' active-count';
+          if (val >= 3) cellClass += ' high-count';
+
+          tableHtml += `<td class="${cellClass}">${val > 0 ? val : '-'}</td>`;
+        });
+
+        grandTotal += totalOperador;
+        tableHtml += `<td class="pivot-total-col">${totalOperador}</td></tr>`;
+      });
+
+      tableHtml += `</tbody><tfoot><tr style="background: #11131f; font-weight:800;"><td style="text-align:left; color:#fde047;">TOTAL GERAL</td>`;
+      funcoesSetor.forEach(f => {
+        tableHtml += `<td style="color:#fde047;">${totPorFuncao[f.id]}</td>`;
+      });
+      tableHtml += `<td style="color:#4ade80; font-size:13px;">${grandTotal}</td></tr></tfoot></table>`;
+
+      document.getElementById('pivotTableWrapper').innerHTML = tableHtml;
+    }
+
+    function resetarDia(tipo, dia) {
+      if (confirm(`Tem certeza que deseja limpar a escala de ${nomesDias[dia]}?`)) {
+        if (tipo === 'rec') {
+          escalaRecebimento[dia] = {};
+          localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+        } else {
+          escalaDoubleCheck[dia] = {};
+          localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+        }
+        renderEstruturas();
+      }
+    }
+
+    function resetarSemanaAtual() {
+      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
+      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
+      const setor = (abaAtual === 'recebimento') ? 'Recebimento Geral' : 'Double Check';
+      
+      if (confirm(`Tem certeza que deseja LIMPAR TODOS OS DIAS da escala (${tiposEscala[tipoEscalaVal].label}) do ${setor}?`)) {
+        diasAlvo.forEach(dia => {
+          if (abaAtual === 'recebimento') {
+            escalaRecebimento[dia] = {};
+          } else {
+            escalaDoubleCheck[dia] = {};
+          }
+        });
+
+        if (abaAtual === 'recebimento') {
+          localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+        } else {
+          localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+        }
+
+        renderEstruturas();
+      }
+    }
+
+    function abrirModalSkills() {
+      let html = '<table class="custom-table"><thead><tr><th>Colaborador</th><th>Competências / Funções Habilitadas</th></tr></thead><tbody>';
+      
+      colaboradores.forEach(nome => {
+        if (!skillsColaboradores[nome]) {
+          skillsColaboradores[nome] = funcoesDisponiveis.map(f => f.id);
+        }
+
+        let checks = '<div class="skill-checkbox-grid">';
+        funcoesDisponiveis.forEach(f => {
+          const temSkill = skillsColaboradores[nome].includes(f.id);
+          checks += `
+            <label class="skill-item">
+              <input type="checkbox" ${temSkill ? 'checked' : ''} onchange="alternarSkill('${nome}', '${f.id}')">
+              ${f.label}
+            </label>
+          `;
+        });
+        checks += '</div>';
+
+        html += `<tr><td><b>${nome}</b></td><td>${checks}</td></tr>`;
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('skillsListContainer').innerHTML = html;
+      document.getElementById('modalSkills').classList.add('active');
+    }
+
+    function alternarSkill(nome, skillId) {
+      if (!skillsColaboradores[nome]) skillsColaboradores[nome] = [];
+      
+      if (skillsColaboradores[nome].includes(skillId)) {
+        skillsColaboradores[nome] = skillsColaboradores[nome].filter(s => s !== skillId);
+      } else {
+        skillsColaboradores[nome].push(skillId);
+      }
+      localStorage.setItem('skills_v18', JSON.stringify(skillsColaboradores));
+    }
+
+    function colaboradorTrabalhaNoDia(nome, dia) {
+      const config = escalaPorColaborador[nome];
+      if (!config) return true;
+      const tipo = tiposEscala[config.tipoEscala];
+      if (!tipo) return true;
+      return tipo.dias.includes(dia);
+    }
+
+    function colaboradorAptoParaFuncao(nome, funcao) {
+      if (!skillsColaboradores[nome]) return true;
+      return skillsColaboradores[nome].includes(funcao);
+    }
+
+    function obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcao, dia, maximoUso = 3) {
+      const aptos = candidatos.filter(c => colaboradorTrabalhaNoDia(c, dia) && colaboradorAptoParaFuncao(c, funcao));
+
+      for (let c of aptos) {
+        if (jaAlocadosNoDia.has(c)) continue;
+        const contagem = usoFuncaoSemana[`${c}|${funcao}`] || 0;
+        if (contagem < maximoUso) return c;
+      }
+      for (let c of aptos) {
+        if (!jaAlocadosNoDia.has(c)) return c;
+      }
+      return null;
+    }
+
+    function executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana) {
+      escalaRecebimento[dia] = {};
+
+      const mesasCompletas = ['m1_2', 'm3_4', 'm5_6'];
+      const slotsCompletos = ['abastecedor', 'bipador_1', 'etiquetador_1', 'bipador_2', 'etiquetador_2', 'sorting'];
+
+      mesasCompletas.forEach(pairId => {
+        slotsCompletos.forEach(slot => {
+          const funcaoNome = slot.includes('bipador') ? 'bipador' : (slot.includes('etiquetador') ? 'etiquetador' : slot);
+          const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+          const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcaoNome, dia, 3);
+
+          if (escolhido) {
+            escalaRecebimento[dia][`${pairId}_${slot}`] = escolhido;
+            jaAlocadosNoDia.add(escolhido);
+            usoFuncaoSemana[`${escolhido}|${funcaoNome}`] = (usoFuncaoSemana[`${escolhido}|${funcaoNome}`] || 0) + 1;
+          }
+        });
+      });
+
+      const slotsMesa78 = ['bipador_1', 'etiquetador_1'];
+      slotsMesa78.forEach(slot => {
+        const funcaoNome = slot.includes('bipador') ? 'bipador' : 'etiquetador';
+        const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+        const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcaoNome, dia, 3);
+
+        if (escolhido) {
+          escalaRecebimento[dia][`m7_8_${slot}`] = escolhido;
+          jaAlocadosNoDia.add(escolhido);
+          usoFuncaoSemana[`${escolhido}|${funcaoNome}`] = (usoFuncaoSemana[`${escolhido}|${funcaoNome}`] || 0) + 1;
+        }
+      });
+
+      for (let i = 1; i <= 2; i++) {
+        const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+        const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, 'gaioleiro', dia, 3);
+        if (escolhido) {
+          escalaRecebimento[dia][`gaioleiro_${i}`] = escolhido;
+          jaAlocadosNoDia.add(escolhido);
+          usoFuncaoSemana[`${escolhido}|gaioleiro`] = (usoFuncaoSemana[`${escolhido}|gaioleiro`] || 0) + 1;
+        }
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+        const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, 'distribuicao_volumosos', dia, 3);
+        if (escolhido) {
+          escalaRecebimento[dia][`distribuicao_volumosos_${i}`] = escolhido;
+          jaAlocadosNoDia.add(escolhido);
+          usoFuncaoSemana[`${escolhido}|distribuicao_volumosos`] = (usoFuncaoSemana[`${escolhido}|distribuicao_volumosos`] || 0) + 1;
+        }
+      }
+
+      funcoesExtrasRec.forEach(ext => {
+        for (let i = 1; i <= ext.qtd; i++) {
+          const candidatos = [...colaboradores].sort(() => Math.random() - 0.5);
+          const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, ext.id, dia, 3);
+          if (escolhido) {
+            escalaRecebimento[dia][`extra_${ext.id}_${i}`] = escolhido;
+            jaAlocadosNoDia.add(escolhido);
+            usoFuncaoSemana[`${escolhido}|${ext.id}`] = (usoFuncaoSemana[`${escolhido}|${ext.id}`] || 0) + 1;
+          }
+        }
+      });
+    }
+
+    function sortearSemana() {
+      const tipo = (abaAtual === 'recebimento') ? 'rec' : 'dc';
+      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
+      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
+      const usoFuncaoSemana = {};
+
+      if (tipo === 'rec') {
+        diasAlvo.forEach(dia => {
+          const jaAlocadosNoDia = new Set();
+          executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana);
+        });
+        localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+      } else {
+        diasAlvo.forEach((dia) => {
+          escalaDoubleCheck[dia] = {};
+          const jaAlocadosNoDia = new Set();
+          const candidatosDoDia = [...colaboradores].sort(() => Math.random() - 0.5);
+
+          for (let m = 1; m <= 12; m++) {
+            for (let pos = 1; pos <= 2; pos++) {
+              const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, 'mesa_dc', dia, 3);
+              if (escolhido) {
+                escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = escolhido;
+                jaAlocadosNoDia.add(escolhido);
+                usoFuncaoSemana[`${escolhido}|mesa_dc`] = (usoFuncaoSemana[`${escolhido}|mesa_dc`] || 0) + 1;
+              }
+            }
+          }
+
+          funcoesDC.forEach(ext => {
+            for (let i = 1; i <= ext.qtd; i++) {
+              const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, ext.id, dia, 3);
+              if (escolhido) {
+                escalaDoubleCheck[dia][`${ext.id}_${i}`] = escolhido;
+                jaAlocadosNoDia.add(escolhido);
+                usoFuncaoSemana[`${escolhido}|${ext.id}`] = (usoFuncaoSemana[`${escolhido}|${ext.id}`] || 0) + 1;
+              }
+            }
+          });
+        });
+        localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+      }
+
+      renderEstruturas();
+    }
+
+    function sortearDia(tipo, dia) {
+      if (tipo === 'rec') {
+        const jaAlocadosNoDia = new Set();
+        const usoFuncaoSemana = {};
+        executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana);
+        localStorage.setItem('escala_rec_v18', JSON.stringify(escalaRecebimento));
+      } else {
+        const disponiveis = colaboradores.filter(c => colaboradorTrabalhaNoDia(c, dia));
+        const embaralhados = [...disponiveis].sort(() => Math.random() - 0.5);
+        let idx = 0;
+
+        escalaDoubleCheck[dia] = {};
+        for (let m = 1; m <= 12; m++) {
+          for (let pos = 1; pos <= 2; pos++) {
+            if (idx < embaralhados.length) escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = embaralhados[idx++];
+          }
+        }
+        funcoesDC.forEach(ext => {
+          for (let i = 1; i <= ext.qtd; i++) {
+            if (idx < embaralhados.length) escalaDoubleCheck[dia][`${ext.id}_${i}`] = embaralhados[idx++];
+          }
+        });
+        localStorage.setItem('escala_dc_v18', JSON.stringify(escalaDoubleCheck));
+      }
+
+      renderEstruturas();
+    }
+
+    function validarDuplicidades() {
+      if (abaAtual === 'dinamica') return;
+      const prefixoEl = (abaAtual === 'recebimento') ? 'rec_' : 'dc_';
+      const containerAba = (abaAtual === 'recebimento') ? document.getElementById('tab-recebimento') : document.getElementById('tab-doublecheck');
+      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
+      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
+
+      const allSelects = containerAba.querySelectorAll('select');
+      allSelects.forEach(s => s.classList.remove('duplicate-same-day', 'duplicate-yellow', 'duplicate-purple', 'duplicate-red'));
+
+      const contadorPessoaFuncaoSemana = {};
+
+      diasAlvo.forEach(dia => {
+        const selectsDoDia = containerAba.querySelectorAll(`select[id^="${prefixoEl}${dia}_"]`);
+
+        const contadorPessoaDia = {};
+        selectsDoDia.forEach(s => {
+          if (s.value && s.value !== '') {
+            contadorPessoaDia[s.value] = (contadorPessoaDia[s.value] || 0) + 1;
+          }
+        });
+
+        selectsDoDia.forEach(selectEl => {
+          const nome = selectEl.value;
+          const funcao = selectEl.getAttribute('data-funcao');
+
+          if (nome && nome !== '') {
+            if (contadorPessoaDia[nome] > 1) {
+              selectEl.classList.add('duplicate-same-day');
+            } else if (funcao) {
+              const chaveUnica = `${nome}|${funcao}`;
+              contadorPessoaFuncaoSemana[chaveUnica] = (contadorPessoaFuncaoSemana[chaveUnica] || 0) + 1;
+
+              const aparicaoFuncao = contadorPessoaFuncaoSemana[chaveUnica];
+              if (aparicaoFuncao === 2) selectEl.classList.add('duplicate-yellow');
+              else if (aparicaoFuncao === 3) selectEl.classList.add('duplicate-purple');
+              else if (aparicaoFuncao >= 4) selectEl.classList.add('duplicate-red');
+            }
+          }
+        });
+      });
+    }
+
+    function buscarColaborador() {
+      const termo = document.getElementById('searchInput').value.trim().toUpperCase();
+      const selects = document.querySelectorAll('select');
+
+      selects.forEach(sel => {
+        sel.classList.remove('highlight-search');
+        if (termo !== '' && sel.value.toUpperCase().includes(termo)) {
+          sel.classList.add('highlight-search');
+        }
+      });
+    }
+
+    function adicionarVariosColaboradores() {
+      const textarea = document.getElementById('novosNomesInput');
+      const texto = textarea.value;
+      if (!texto.trim()) return;
+
+      const nomesProcessados = texto.split(/[\n,]+/).map(n => n.trim().toUpperCase()).filter(n => n.length > 0);
+      novosNomesTemporarios = [];
+
+      nomesProcessados.forEach(nome => {
+        if (!colaboradores.includes(nome) && !novosNomesTemporarios.includes(nome)) {
+          novosNomesTemporarios.push(nome);
+        }
+      });
+
+      if (novosNomesTemporarios.length === 0) {
+        alert('Todos os colaboradores informados já existem na lista!');
+        textarea.value = '';
+        return;
+      }
+
+      exibirModalEscalasNovos();
+    }
+
+    function exibirModalEscalasNovos() {
+      let html = `<table class="custom-table">
+        <thead>
+          <tr>
+            <th>Colaborador</th>
+            <th>Escala de Trabalho</th>
+            <th>Domingo de Trabalho do Mês</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      novosNomesTemporarios.forEach((nome, idx) => {
+        html += `
+          <tr>
+            <td><b>${nome}</b></td>
+            <td>
+              <select id="sel_escala_${idx}" class="filter-select" style="width: 100%; font-size: 11px; padding: 4px;">
+                <option value="seg_sex">Segunda a Sexta</option>
+                <option value="qua_dom">Quarta a Domingo</option>
+                <option value="ter_dom">Terça a Domingo</option>
+              </select>
+            </td>
+            <td>
+              <select id="sel_domingo_${idx}" class="filter-select" style="width: 100%; font-size: 11px; padding: 4px;">
+                <option value="dom1">1º Domingo</option>
+                <option value="dom2">2º Domingo</option>
+                <option value="dom3">3º Domingo</option>
+                <option value="dom4">4º Domingo</option>
+                <option value="dom5">5º Domingo</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('novosNomesEscalaList').innerHTML = html;
+      document.getElementById('modalNovosNomesEscala').classList.add('active');
+    }
+
+    function salvarEscalasNovos() {
+      novosNomesTemporarios.forEach((nome, idx) => {
+        if (!colaboradores.includes(nome)) {
+          colaboradores.push(nome);
+        }
+
+        const tipoEscala = document.getElementById(`sel_escala_${idx}`).value;
+        const domingoMes = document.getElementById(`sel_domingo_${idx}`).value;
+
+        escalaPorColaborador[nome] = { tipoEscala, domingoMes };
+      });
+
+      localStorage.setItem('colaboradores_v18', JSON.stringify(colaboradores));
+      localStorage.setItem('escala_colaborador_v18', JSON.stringify(escalaPorColaborador));
+
+      document.getElementById('novosNomesInput').value = '';
+      novosNomesTemporarios = [];
+      fecharModais();
+      renderEstruturas();
+    }
+
+    function resetarBancoNomes() {
+      if (confirm('Tem certeza que deseja apagar TODOS os colaboradores e zerar as escalas?')) {
+        colaboradores = [];
+        escalaPorColaborador = {};
+        diasSemana.forEach(dia => {
+          escalaRecebimento[dia] = {};
+          escalaDoubleCheck[dia] = {};
+        });
+        localStorage.removeItem('colaboradores_v18');
+        localStorage.removeItem('escala_colaborador_v18');
+        localStorage.removeItem('escala_rec_v18');
+        localStorage.removeItem('escala_dc_v18');
+        localStorage.removeItem('skills_v18');
+        renderEstruturas();
+      }
+    }
+
+    function removerColaborador(nome) {
+      if (confirm(`Remover ${nome}?`)) {
+        colaboradores = colaboradores.filter(c => c !== nome);
+        delete escalaPorColaborador[nome];
+        localStorage.setItem('colaboradores_v18', JSON.stringify(colaboradores));
+        localStorage.setItem('escala_colaborador_v18', JSON.stringify(escalaPorColaborador));
+        renderEstruturas();
+      }
+    }
+
+    function atualizarNaoEscalados() {
+      if (abaAtual === 'dinamica') return;
+      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
+      const domMesVal = document.getElementById('filtroDomingoMes').value;
+      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
+      const escalaAtualData = (abaAtual === 'recebimento') ? escalaRecebimento : escalaDoubleCheck;
+      
+      const pertencentesEscala = colaboradores.filter(c => {
+        const config = escalaPorColaborador[c];
+        if (!config) return true;
+        return config.tipoEscala === tipoEscalaVal && config.domingoMes === domMesVal;
+      });
+
+      const escaladosNaEscala = new Set();
+      diasAlvo.forEach(d => {
+        Object.values(escalaAtualData[d] || {}).forEach(v => {
+          if (v && v.trim() !== '') escaladosNaEscala.add(v);
+        });
+      });
+
+      const naoEscalados = pertencentesEscala.filter(c => !escaladosNaEscala.has(c));
+
+      document.getElementById('countInfo').innerText = `NÃO ALOCADOS (${naoEscalados.length})`;
+      const listEl = document.getElementById('listaNaoEscalados');
+
+      if (naoEscalados.length === 0) {
+        listEl.innerHTML = '<span style="font-size: 9px; color: #10b981; font-weight: 700;">✓ Todos foram alocados nesta escala!</span>';
+        return;
+      }
+
+      let htmlChips = '';
+      for (let i = 0; i < naoEscalados.length; i++) {
+        const nome = naoEscalados[i];
+        
+        htmlChips += `
+          <div class="chip-user">
+            <span>👤 ${formatarNomeAbreviado(nome)}</span>
+            <span class="remove-btn" onclick="removerColaborador('${nome}')">✕</span>
+          </div>
+        `;
+      }
+      listEl.innerHTML = htmlChips;
+    }
+
+    function abrirModalPrint() {
+      document.getElementById('printSetorSelect').value = abaAtual === 'recebimento' ? 'rec' : 'dc';
+      document.getElementById('downloadImageBtn').style.display = 'none';
+      document.getElementById('previewContainer').innerHTML = '<span style="font-size: 11px; color: #64748b;">Selecione as opções acima e clique em "Gerar Imagem HD"</span>';
+      document.getElementById('modalPrint').classList.add('active');
+    }
+
+    function gerarPrintPreview() {
+      const modoPrint = document.getElementById('printEscalaSelect').value;
+      const setor = document.getElementById('printSetorSelect').value;
+      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
+      const domLabel = document.getElementById('filtroDomingoMes').options[document.getElementById('filtroDomingoMes').selectedIndex].text;
+      
+      const captureArea = document.getElementById('captureArea');
+      captureArea.innerHTML = '';
+
+      let htmlPrint = `<div style="display: flex; flex-direction: column; gap: 20px;">`;
+      htmlPrint += `<h2 style="text-align: center; color: #60a5fa; margin: 0 0 10px 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">ESCALA (${tiposEscala[tipoEscalaVal].label.toUpperCase()}) - ${domLabel.toUpperCase()} - ${setor === 'rec' ? 'RECEBIMENTO GERAL' : 'DOUBLE CHECK'}</h2>`;
+
+      const diasParaImprimir = modoPrint === 'todas' ? diasSemana : tiposEscala[tipoEscalaVal].dias;
+
+      diasParaImprimir.forEach(dia => {
+        const originalBlock = document.getElementById(`block_${setor}_${dia}`);
+        if (originalBlock) {
+          htmlPrint += originalBlock.outerHTML;
+        }
+      });
+      htmlPrint += `</div>`;
+      captureArea.innerHTML = htmlPrint;
+
+      const originalContainer = (setor === 'rec') ? document.getElementById('tab-recebimento') : document.getElementById('tab-doublecheck');
+      
+      diasParaImprimir.forEach(dia => {
+        const origSelects = originalContainer.querySelectorAll(`select[id^="${setor}_${dia}_"]`);
+        
+        origSelects.forEach(origSel => {
+          const clonedSel = captureArea.querySelector(`#${origSel.id}`);
+          if (clonedSel) {
+            const val = origSel.value;
+            const div = document.createElement('div');
+            if (val && val.trim() !== '') {
+              div.className = 'print-name-box';
+              div.innerText = formatarNomeAbreviado(val);
+            } else {
+              div.className = 'print-name-box empty';
+              div.innerText = '- Não Alocado -';
+            }
+            clonedSel.parentNode.replaceChild(div, clonedSel);
+          }
+        });
+      });
+
+      captureArea.querySelectorAll('button').forEach(b => b.remove());
+      captureArea.querySelectorAll('.day-block').forEach(b => b.classList.remove('day-hidden'));
+
+      const previewBox = document.getElementById('previewContainer');
+      previewBox.innerHTML = '<span style="font-size: 11px; color: #38bdf8; font-weight: bold;">⚡ Processando e gerando imagem Ultra HD (Aguarde alguns segundos)...</span>';
+
+      setTimeout(() => {
+        html2canvas(captureArea, {
+          backgroundColor: '#0d0f17',
+          scale: 4,
+          useCORS: true,
+          logging: false,
+          windowWidth: 1920,
+          onclone: (clonedDoc) => {
+            const area = clonedDoc.getElementById('captureArea');
+            if (area) {
+              area.style.webkitFontSmoothing = 'antialiased';
+              area.style.mozOsxFontSmoothing = 'grayscale';
+            }
+          }
+        }).then(canvas => {
+          previewBox.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = canvas.toDataURL('image/png', 1.0);
+          img.style.maxWidth = '100%';
+          img.style.borderRadius = '8px';
+          img.style.border = '1px solid #334155';
+          previewBox.appendChild(img);
+
+          const nomeArquivo = `Escala_${setor.toUpperCase()}_${tipoEscalaVal}.png`;
+
+          const btnDownload = document.getElementById('downloadImageBtn');
+          btnDownload.href = canvas.toDataURL('image/png', 1.0);
+          btnDownload.download = nomeArquivo;
+          btnDownload.style.display = 'inline-block';
+        });
+      }, 200);
+    }
+
+    function fecharModais() {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+
+    function salvarEscala() { alert('Histórico salvo no navegador com sucesso!'); }
+
+    renderEstruturas();
+  </script>
+</body>
+</html>
