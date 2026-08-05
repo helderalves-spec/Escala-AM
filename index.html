@@ -14,7 +14,7 @@
     
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
     .top-bar h1 { font-size: 18px; font-weight: 800; margin: 0; }
-    .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+    .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     
     .btn { padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
     .btn-outline-blue { background: transparent; border-color: #3b82f6; color: #60a5fa; }
@@ -26,6 +26,19 @@
     .btn-green-solid { background: #10b981; color: white; border: none; }
     .btn-red-solid { background: #ef4444; color: white; border: none; }
     .btn:hover { opacity: 0.85; }
+
+    /* BADGE DE STATUS FIREBASE */
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+    .status-saved { background: #064e3b; color: #6ee7b7; border: 1px solid #10b981; }
+    .status-saving { background: #713f12; color: #fef08a; border: 1px solid #eab308; }
 
     /* NAVEGAÇÃO DE ABAS */
     .tabs-nav { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #262a40; padding-bottom: 8px; }
@@ -155,11 +168,11 @@
   <div class="top-bar">
     <h1>Gerenciador de Escalas Pro</h1>
     <div class="action-buttons">
+      <span id="firebaseStatus" class="status-badge status-saved">🟢 Sincronizado</span>
       <button class="btn btn-outline-yellow" onclick="abrirModalSkills()">🎯 Skills / Competências</button>
       <button class="btn btn-outline-blue" onclick="abrirModalPrint()">📷 Imagem (.png HD)</button>
       <button class="btn btn-outline-purple" onclick="sortearSemana()">🎲 Sortear Escala</button>
       <button class="btn btn-outline-red" onclick="resetarSemanaAtual()">💥 Limpar Escala</button>
-      <button class="btn btn-purple-solid" onclick="salvarEscala()">💾 Salvar</button>
     </div>
   </div>
 
@@ -315,7 +328,7 @@
   <!-- ÁREA OCULTA PARA CAPTURA DE IMAGEM -->
   <div id="captureArea"></div>
 
-  <!-- SCRIPT DO FIREBASE -->
+  <!-- SCRIPT DO FIREBASE COM AUTO-SAVE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
@@ -337,25 +350,46 @@
 
     const docRef = doc(db, "escalas", "dados_gerais");
 
-    // Salva no Firebase
-    window.salvarEscala = async function() {
-      try {
-        await setDoc(docRef, {
-          colaboradores: window.colaboradores,
-          escalaPorColaborador: window.escalaPorColaborador,
-          skillsColaboradores: window.skillsColaboradores,
-          escalaRecebimento: window.escalaRecebimento,
-          escalaDoubleCheck: window.escalaDoubleCheck
-        });
-        alert('🔥 Escala salva com sucesso no Firebase!');
-      } catch (e) {
-        console.error("Erro ao salvar no Firebase: ", e);
-        alert('❌ Erro ao salvar dados no Firebase.');
+    let timerAutoSave = null;
+    let alteracaoLocal = false;
+
+    function atualizarStatus(texto, classe) {
+      const el = document.getElementById("firebaseStatus");
+      if (el) {
+        el.textContent = texto;
+        el.className = `status-badge ${classe}`;
       }
+    }
+
+    // Função de Salvamento Automático no Firebase com Debounce
+    window.agendarAutoSave = function() {
+      alteracaoLocal = true;
+      atualizarStatus("🟡 Salvando...", "status-saving");
+      
+      clearTimeout(timerAutoSave);
+      timerAutoSave = setTimeout(async () => {
+        try {
+          await setDoc(docRef, {
+            colaboradores: window.colaboradores || [],
+            escalaPorColaborador: window.escalaPorColaborador || {},
+            skillsColaboradores: window.skillsColaboradores || {},
+            escalaRecebimento: window.escalaRecebimento || {},
+            escalaDoubleCheck: window.escalaDoubleCheck || {}
+          });
+          atualizarStatus("🟢 Sincronizado", "status-saved");
+        } catch (e) {
+          console.error("Erro no auto-save do Firebase: ", e);
+          atualizarStatus("🔴 Erro ao salvar", "status-saving");
+        } finally {
+          alteracaoLocal = false;
+        }
+      }, 500); // Aguarda 500ms para evitar requisições desnecessárias
     };
 
-    // Sincronização em tempo real do Firebase
+    // Sincronização em tempo real do Firebase (Escuta mudanças no banco)
     onSnapshot(docRef, (docSnap) => {
+      if (alteracaoLocal) return; // Se a mudança foi local, ignora para não sobrescrever
+
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.colaboradores) window.colaboradores = data.colaboradores;
@@ -722,6 +756,9 @@
       }
       atualizarNaoEscalados();
       validarDuplicidades();
+
+      // Dispara Auto Save em Tempo Real
+      if (window.agendarAutoSave) window.agendarAutoSave();
     }
 
     function renderTabelaDinamica() {
@@ -830,6 +867,7 @@
           localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
         }
         window.renderEstruturas();
+        if (window.agendarAutoSave) window.agendarAutoSave();
       }
     }
 
@@ -854,6 +892,7 @@
         }
 
         window.renderEstruturas();
+        if (window.agendarAutoSave) window.agendarAutoSave();
       }
     }
 
@@ -894,6 +933,7 @@
         window.skillsColaboradores[nome].push(skillId);
       }
       localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
+      if (window.agendarAutoSave) window.agendarAutoSave();
     }
 
     function colaboradorTrabalhaNoDia(nome, dia) {
@@ -1033,6 +1073,7 @@
       }
 
       window.renderEstruturas();
+      if (window.agendarAutoSave) window.agendarAutoSave();
     }
 
     function sortearDia(tipo, dia) {
@@ -1061,6 +1102,7 @@
       }
 
       window.renderEstruturas();
+      if (window.agendarAutoSave) window.agendarAutoSave();
     }
 
     function validarDuplicidades() {
@@ -1200,6 +1242,7 @@
       novosNomesTemporarios = [];
       fecharModais();
       window.renderEstruturas();
+      if (window.agendarAutoSave) window.agendarAutoSave();
     }
 
     function resetarBancoNomes() {
@@ -1216,6 +1259,7 @@
         localStorage.removeItem('escala_dc_v18');
         localStorage.removeItem('skills_v18');
         window.renderEstruturas();
+        if (window.agendarAutoSave) window.agendarAutoSave();
       }
     }
 
@@ -1226,6 +1270,7 @@
         localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
         localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
         window.renderEstruturas();
+        if (window.agendarAutoSave) window.agendarAutoSave();
       }
     }
 
