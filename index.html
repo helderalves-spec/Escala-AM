@@ -199,6 +199,7 @@
               <option value="seg_sex">Escala 1 (Seg a Sex)</option>
               <option value="qua_dom">Escala 2 (Qua a Dom)</option>
               <option value="ter_dom">Escala 3 (Ter a Dom)</option>
+              <option value="completa">Escala Completa (Seg a Dom)</option>
             </select>
             <select id="novoDomingoMes">
               <option value="dom1">1º Domingo</option>
@@ -236,6 +237,7 @@
                 <option value="seg_sex">Escala 1 (Seg a Sex)</option>
                 <option value="qua_dom">Escala 2 (Qua a Dom)</option>
                 <option value="ter_dom">Escala 3 (Ter a Dom)</option>
+                <option value="completa" selected>Escala Completa (Seg a Dom)</option>
               </select>
             </div>
             <div>
@@ -425,7 +427,8 @@
     const tiposEscala = {
       seg_sex: { label: 'Escala 1 (Seg a Sex)', dias: ['segunda', 'terca', 'quarta', 'quinta', 'sexta'], folgas: ['sabado', 'domingo'] },
       qua_dom: { label: 'Escala 2 (Qua a Dom)', dias: ['quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda', 'terca'] },
-      ter_dom: { label: 'Escala 3 (Ter a Dom)', dias: ['terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda'] }
+      ter_dom: { label: 'Escala 3 (Ter a Dom)', dias: ['terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda'] },
+      completa: { label: 'Escala Completa (Seg a Dom)', dias: ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: [] }
     };
 
     let abaAtual = 'recebimento';
@@ -984,7 +987,7 @@
     function executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana) {
       window.escalaRecebimento[dia] = {};
 
-      const mesasCompletas = ['m1_2', 'm3_4', 'm5_6'];
+      const mesasCompletas = ['m1_2', 'm3_4', 'm5_6', 'm7_8', 'm9_10'];
       const slotsCompletos = ['abastecedor', 'bipador_1', 'etiquetador_1', 'bipador_2', 'etiquetador_2', 'sorting'];
 
       mesasCompletas.forEach(pairId => {
@@ -999,19 +1002,6 @@
             usoFuncaoSemana[`${escolhido}|${funcaoNome}`] = (usoFuncaoSemana[`${escolhido}|${funcaoNome}`] || 0) + 1;
           }
         });
-      });
-
-      const slotsMesa78 = ['bipador_1', 'etiquetador_1'];
-      slotsMesa78.forEach(slot => {
-        const funcaoNome = slot.includes('bipador') ? 'bipador' : 'etiquetador';
-        const candidatos = [...window.colaboradores].sort(() => Math.random() - 0.5);
-        const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcaoNome, dia, 3);
-
-        if (escolhido) {
-          window.escalaRecebimento[dia][`m7_8_${slot}`] = escolhido;
-          jaAlocadosNoDia.add(escolhido);
-          usoFuncaoSemana[`${escolhido}|${funcaoNome}`] = (usoFuncaoSemana[`${escolhido}|${funcaoNome}`] || 0) + 1;
-        }
       });
 
       for (let i = 1; i <= 2; i++) {
@@ -1249,7 +1239,6 @@
       }
     }
 
-    /* MODIFICAÇÃO PRINCIPAL: Exibe todos os colaboradores independente da escala/domingo */
     function atualizarNaoEscalados() {
       if (abaAtual === 'dinamica') return;
       
