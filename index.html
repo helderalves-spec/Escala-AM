@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Escalas Avançado Pro</title>
+  <title>Sistema de Escalas Avançado Pro - Seg a Sáb</title>
   
   <!-- Bibliotecas Externas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -53,7 +53,7 @@
     .btn-red-solid { background: #ef4444; color: white; border: none; }
     .btn:hover { opacity: 0.85; }
 
-    /* BADGE DE STATUS FIREBASE */
+    /* BADGE DE STATUS LOCAL (INDEXEDDB) */
     .status-badge {
       padding: 4px 10px;
       border-radius: 12px;
@@ -83,7 +83,6 @@
     .add-names-controls textarea { width: 100%; height: 38px; background: #11131f; border: 1px solid #334155; border-radius: 6px; padding: 6px; color: white; font-size: 10px; resize: none; font-family: inherit; }
     
     .add-config-row { display: flex; gap: 6px; flex-wrap: wrap; }
-    .add-config-row select { background: #11131f; border: 1px solid #334155; border-radius: 4px; color: white; font-size: 10px; padding: 4px 6px; flex: 1; }
 
     .search-box { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 5px; }
     .search-input { width: 100%; height: 38px; background: #11131f; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; color: #fde047; font-size: 11px; font-weight: bold; }
@@ -111,7 +110,6 @@
     .day-header.quinta { background: #059669; }
     .day-header.sexta { background: #d97706; }
     .day-header.sabado { background: #dc2626; }
-    .day-header.domingo { background: #475569; }
 
     .btn-sm { padding: 3px 8px; font-size: 10px; border-radius: 4px; }
 
@@ -123,6 +121,7 @@
     .mesa-layout-card { background: #11131f; border: 1px solid #262a40; border-radius: 8px; padding: 8px; flex: 0 0 260px; }
     .dc-pair-card { background: #11131f; border: 1px solid #262a40; border-radius: 8px; padding: 8px; flex: 0 0 210px; display: flex; flex-direction: column; gap: 10px; }
     .dc-single-mesa { background: #181b29; border: 1px solid #262a40; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .dc-single-mesa.mesa-tratativa { border-color: #f59e0b; background: #1e1b18; }
     .extra-card { background: #11131f; border: 1px solid #3b82f6; border-radius: 8px; padding: 8px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 4px; }
     .card-title { text-align: center; font-weight: 800; font-size: 10px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; }
 
@@ -201,9 +200,9 @@
 
   <!-- TOP BAR -->
   <div class="top-bar">
-    <h1>Gerenciador de Escalas Pro</h1>
+    <h1>Gerenciador de Escalas Pro (Segunda a Sábado)</h1>
     <div class="action-buttons">
-      <span id="firebaseStatus" class="status-badge status-saved">🟢 Sincronizado</span>
+      <span id="storageStatus" class="status-badge status-saved">🟢 Armazenado Localmente</span>
       <button class="btn btn-outline-yellow admin-only" onclick="abrirModalSkills()">🎯 Skills / Competências</button>
       <button class="btn btn-outline-blue" onclick="abrirModalPrint()">📷 Imagem (.png HD)</button>
       <button class="btn btn-outline-purple admin-only" onclick="sortearSemana()">🎲 Sortear Escala</button>
@@ -220,7 +219,6 @@
     </div>
     <div class="login-box">
       <div id="loginForm">
-        <!-- Campo alterado para type="password" para ocultar os caracteres digitados -->
         <input type="password" id="adminPasswordInput" class="login-input" placeholder="Senha Admin">
         <button class="btn btn-blue-solid" onclick="entrarComoAdmin()">Entrar como Admin</button>
       </div>
@@ -244,21 +242,8 @@
           <textarea id="novosNomesInput" placeholder="Cole vários nomes aqui..."></textarea>
           
           <div class="add-config-row">
-            <select id="novoTipoEscala">
-              <option value="seg_sex">Seg a Sex</option>
-              <option value="qua_dom">Qua a Dom</option>
-              <option value="ter_dom">Ter a Dom</option>
-              <option value="completa">Seg a Dom</option>
-            </select>
-            <select id="novoDomingoMes">
-              <option value="dom1">1º Domingo</option>
-              <option value="dom2">2º Domingo</option>
-              <option value="dom3">3º Domingo</option>
-              <option value="dom4">4º Domingo</option>
-              <option value="dom5">5º Domingo</option>
-            </select>
-            <button class="btn btn-blue-solid" onclick="adicionarVariosColaboradores()">+ Add</button>
-            <button class="btn btn-red-solid" onclick="resetarBancoNomes()">💥 Zerar</button>
+            <button class="btn btn-blue-solid" onclick="adicionarVariosColaboradores()">+ Add Nomes</button>
+            <button class="btn btn-red-solid" onclick="resetarBancoNomes()">💥 Zerar Banco</button>
           </div>
           
           <!-- Seleção Rápida de Funções ao Cadastrar -->
@@ -284,34 +269,13 @@
             <div class="ver-dia-selector">
               <label for="filtroVerDia">Ver Dia:</label>
               <select id="filtroVerDia" class="ver-dia-select" onchange="aoMudarFiltroEscala()">
-                <option value="todos">Todos os Dias</option>
+                <option value="todos">Todos os Dias (Seg-Sáb)</option>
                 <option value="segunda">Segunda</option>
                 <option value="terca">Terça</option>
                 <option value="quarta">Quarta</option>
                 <option value="quinta">Quinta</option>
                 <option value="sexta">Sexta</option>
                 <option value="sabado">Sábado</option>
-                <option value="domingo">Domingo</option>
-              </select>
-            </div>
-
-            <div>
-              <label style="font-size: 9px; color: #94a3b8; font-weight: bold;">Escala Exibida:</label>
-              <select id="filtroEscalaTipo" class="filter-select" onchange="aoMudarFiltroEscala()">
-                <option value="seg_sex">Seg a Sex</option>
-                <option value="qua_dom">Qua a Dom</option>
-                <option value="ter_dom">Ter a Dom</option>
-                <option value="completa" selected>Seg a Dom</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size: 9px; color: #94a3b8; font-weight: bold;">Domingo:</label>
-              <select id="filtroDomingoMes" class="filter-select" onchange="aoMudarFiltroEscala()">
-                <option value="dom1">1º Domingo</option>
-                <option value="dom2">2º Domingo</option>
-                <option value="dom3">3º Domingo</option>
-                <option value="dom4">4º Domingo</option>
-                <option value="dom5">5º Domingo</option>
               </select>
             </div>
           </div>
@@ -337,7 +301,7 @@
       <div class="pivot-header-toolbar">
         <div>
           <h2 style="margin:0; font-size: 15px; color:#60a5fa;">📊 Matriz de Distribuição Semanal por Operador</h2>
-          <p style="margin: 3px 0 0 0; font-size: 11px; color:#94a3b8;">Acompanhe a quantidade total de vezes que cada operador passou por determinada função no ciclo atual.</p>
+          <p style="margin: 3px 0 0 0; font-size: 11px; color:#94a3b8;">Acompanhe a quantidade total de vezes que cada operador passou por determinada função no ciclo atual (Segunda a Sábado).</p>
         </div>
         <div>
           <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">Analisar Setor:</label>
@@ -372,11 +336,10 @@
       </div>
       <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
         <div>
-          <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">Selecione a Escala a Imprimir:</label><br>
+          <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">Selecione o Intervalo a Imprimir:</label><br>
           <select id="printEscalaSelect" class="filter-select" style="font-size: 12px; padding: 5px;">
             <option value="dia_selecionado">Dia Selecionado (Filtro 'Ver Dia')</option>
-            <option value="atual">Escala Selecionada Atual</option>
-            <option value="todas">Todas as Escalas</option>
+            <option value="todas">Semana Completa (Seg a Sáb)</option>
           </select>
         </div>
         <div>
@@ -404,33 +367,62 @@
   <!-- ÁREA OCULTA PARA CAPTURA DE IMAGEM -->
   <div id="captureArea"></div>
 
-  <!-- SCRIPT DO FIREBASE COM AUTO-SAVE -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <!-- GERENCIADOR LOCAL IndexedDB PARA ARMAZENAMENTO PERSISTENTE -->
+  <script>
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(persistent => {
+        console.log(persistent ? "Storage garantido contra limpeza automatica." : "Storage padrao.");
+      });
+    }
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBEk25E4X6ksYtQds8we89mZ1rGo9JH0s4",
-      authDomain: "escala-am.firebaseapp.com",
-      projectId: "escala-am",
-      storageBucket: "escala-am.firebasestorage.app",
-      messagingSenderId: "434278194465",
-      appId: "1:434278194465:web:ca3ad65172e563cdaeb260",
-      measurementId: "G-RR6HF9P1QC"
-    };
+    const DB_NAME = 'EscalasDB_SegSab';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'dados_escalas';
+    let db = null;
 
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
+    function abrirBD() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const dbInstance = e.target.result;
+          if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
+            dbInstance.createObjectStore(STORE_NAME);
+          }
+        };
+        req.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        req.onerror = (e) => reject(e);
+      });
+    }
 
-    const docRef = doc(db, "escalas", "dados_gerais");
+    async function salvarNoIndexedDB(chave, valor) {
+      if (!db) await abrirBD();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.put(valor, chave);
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e);
+      });
+    }
+
+    async function carregarDoIndexedDB(chave) {
+      if (!db) await abrirBD();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get(chave);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = (e) => reject(e);
+      });
+    }
 
     let timerAutoSave = null;
-    let alteracaoLocal = false;
 
     function atualizarStatus(texto, classe) {
-      const el = document.getElementById("firebaseStatus");
+      const el = document.getElementById("storageStatus");
       if (el) {
         el.textContent = texto;
         el.className = `status-badge ${classe}`;
@@ -438,71 +430,56 @@
     }
 
     window.agendarAutoSave = function() {
-      if (window.perfilAtual !== 'admin') return; // Apenas admin pode salvar no Firebase
-      
-      alteracaoLocal = true;
       atualizarStatus("🟡 Salvando...", "status-saving");
       
       clearTimeout(timerAutoSave);
       timerAutoSave = setTimeout(async () => {
         try {
-          await setDoc(docRef, {
-            colaboradores: window.colaboradores || [],
-            escalaPorColaborador: window.escalaPorColaborador || {},
-            skillsColaboradores: window.skillsColaboradores || {},
-            escalaRecebimento: window.escalaRecebimento || {},
-            escalaDoubleCheck: window.escalaDoubleCheck || {}
-          });
-          atualizarStatus("🟢 Sincronizado", "status-saved");
+          await salvarNoIndexedDB('colaboradores', window.colaboradores || []);
+          await salvarNoIndexedDB('skillsColaboradores', window.skillsColaboradores || {});
+          await salvarNoIndexedDB('escalaRecebimento', window.escalaRecebimento || {});
+          await salvarNoIndexedDB('escalaDoubleCheck', window.escalaDoubleCheck || {});
+          
+          atualizarStatus("🟢 Armazenado Localmente", "status-saved");
         } catch (e) {
-          console.error("Erro no auto-save do Firebase: ", e);
+          console.error("Erro no salvamento IndexedDB: ", e);
           atualizarStatus("🔴 Erro ao salvar", "status-saving");
-        } finally {
-          alteracaoLocal = false;
         }
-      }, 500);
+      }, 300);
     };
 
-    onSnapshot(docRef, (docSnap) => {
-      if (alteracaoLocal) return;
+    async function carregarDadosLocais() {
+      try {
+        const colab = await carregarDoIndexedDB('colaboradores');
+        const sk = await carregarDoIndexedDB('skillsColaboradores');
+        const escRec = await carregarDoIndexedDB('escalaRecebimento');
+        const escDC = await carregarDoIndexedDB('escalaDoubleCheck');
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.colaboradores) window.colaboradores = data.colaboradores;
-        if (data.escalaPorColaborador) window.escalaPorColaborador = data.escalaPorColaborador;
-        if (data.skillsColaboradores) window.skillsColaboradores = data.skillsColaboradores;
-        if (data.escalaRecebimento) window.escalaRecebimento = data.escalaRecebimento;
-        if (data.escalaDoubleCheck) window.escalaDoubleCheck = data.escalaDoubleCheck;
+        if (colab) window.colaboradores = colab;
+        if (sk) window.skillsColaboradores = sk;
+        if (escRec) window.escalaRecebimento = escRec;
+        if (escDC) window.escalaDoubleCheck = escDC;
 
-        localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
-        localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
-        localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
-        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
-        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
-
+      } catch (err) {
+        console.warn("Nenhum dado prévio encontrado no IndexedDB.", err);
+      } finally {
         if (window.renderEstruturas) {
           window.renderEstruturas();
         }
       }
-    });
+    }
   </script>
 
   <script>
-    const diasSemana = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
-    const nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
-
-    const tiposEscala = {
-      seg_sex: { label: 'Seg a Sex', dias: ['segunda', 'terca', 'quarta', 'quinta', 'sexta'], folgas: ['sabado', 'domingo'] },
-      qua_dom: { label: 'Qua a Dom', dias: ['quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda', 'terca'] },
-      ter_dom: { label: 'Ter a Dom', dias: ['terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: ['segunda'] },
-      completa: { label: 'Seg a Dom', dias: ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'], folgas: [] }
-    };
+    // FIXO: Todos trabalham de segunda a sábado
+    const diasSemana = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+    const nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado' };
 
     let abaAtual = 'recebimento';
-    window.perfilAtual = 'espectador'; // 'admin' ou 'espectador'
-    // Senha alterada de "1234" para "1013"
+    window.perfilAtual = 'espectador';
     const SENHA_ADMIN = "1013";
 
+    // MANTIDO: 10 MESAS DIVIDIDAS EM 5 PARES PARA O RECEBIMENTO GERAL
     const paresMesas = [
       { id: 'm1_2', label: 'Mesa 1 e Mesa 2' },
       { id: 'm3_4', label: 'Mesa 3 e Mesa 4' },
@@ -520,35 +497,35 @@
       { id: 'distribuicao_volumosos', label: 'Distribuição Volumosos' },
       { id: 'handover', label: 'Handover' },
       { id: 'dono_rua', label: 'Dono de Rua' },
-      { id: 'mesa_xpt', label: 'Mesa XPT' },
+      { id: 'xpt', label: 'XPT' },
       { id: 'mesa_dc', label: 'Mesa DC' },
       { id: 'puxar_gaiolas', label: 'Puxar Gaiolas' },
       { id: 'tratativa_pacotes', label: 'Tratativa' },
       { id: 'pacotinhos', label: 'Pacotinhos' }
     ];
 
+    // MANTIDO: HANDOVER, DONO DE RUA E CARD XPT
     const funcoesExtrasRec = [
-      { id: 'handover', label: 'HANDOVER', qtd: 6 },
-      { id: 'dono_rua', label: 'DONO DE RUA', qtd: 6 },
-      { id: 'mesa_xpt', label: 'MESA XPT', qtd: 6 }
+      { id: 'handover', label: 'HANDOVER', qtd: 4 },
+      { id: 'dono_rua', label: 'DONO DE RUA', qtd: 4 },
+      { id: 'xpt', label: 'XPT', qtd: 4 }
     ];
 
+    // TRATATIVA REMOVIDA DOS CARDS EXTRAS (POIS AGORA É A MESA 7)
     const funcoesDC = [
       { id: 'puxar_gaiolas', label: 'PUXAR GAIOLAS', qtd: 4 },
-      { id: 'tratativa_pacotes', label: 'TRATATIVA DE PACOTES', qtd: 1 },
-      { id: 'pacotinhos', label: 'PACOTINHOS', qtd: 5 }
+      { id: 'pacotinhos', label: 'PACOTINHOS', qtd: 4 }
     ];
 
-    window.colaboradores = JSON.parse(localStorage.getItem('colaboradores_v18')) || [
+    window.colaboradores = [
       'FERNANDA LEAO TEIXEIRA', 'MILENA SILVA SOARES', 'AMANDA CECILIA', 'DIESLEY HENRIQUE', 
       'IGOR MATHEUS', 'JOSENICE MARINHO', 'LUCAS VINICIUS', 'MARCELO AUGUSTO', 
       'SOLANGE DE JESUS', 'YASMIN SILVA', 'HELDER SILVA', 'CAUÃ OLIVEIRA', 'OTAVIO'
     ];
 
-    window.escalaPorColaborador = JSON.parse(localStorage.getItem('escala_colaborador_v18')) || {};
-    window.skillsColaboradores = JSON.parse(localStorage.getItem('skills_v18')) || {};
-    window.escalaRecebimento = JSON.parse(localStorage.getItem('escala_rec_v18')) || {};
-    window.escalaDoubleCheck = JSON.parse(localStorage.getItem('escala_dc_v18')) || {};
+    window.skillsColaboradores = {};
+    window.escalaRecebimento = {};
+    window.escalaDoubleCheck = {};
 
     diasSemana.forEach(dia => {
       if (!window.escalaRecebimento[dia]) window.escalaRecebimento[dia] = {};
@@ -593,7 +570,6 @@
         document.body.classList.remove('is-viewer');
       }
 
-      // Desabilita ou Habilita Selects das Escalas
       const selectsSlots = document.querySelectorAll('.slot select');
       selectsSlots.forEach(s => s.disabled = !ehAdmin);
     }
@@ -785,33 +761,35 @@
       diasSemana.forEach(dia => {
         let contentHtml = '';
 
-        for (let m = 1; m <= 12; m += 2) {
+        // 14 MESAS DIVIDIDAS EM PARES. MESA 7 DEFINIDA COMO TRATATIVA DE PACOTES
+        for (let m = 1; m <= 14; m += 2) {
           const mTop = m;
           const mBottom = m + 1;
 
+          const isTopTratativa = (mTop === 7);
+          const isBottomTratativa = (mBottom === 7);
+
+          const titleTop = isTopTratativa ? 'MESA 7 (TRATATIVA DE PACOTES)' : `MESA ${mTop}`;
+          const titleBottom = isBottomTratativa ? 'MESA 7 (TRATATIVA DE PACOTES)' : `MESA ${mBottom}`;
+
+          const funcTop = isTopTratativa ? 'tratativa_pacotes' : 'mesa_dc';
+          const funcBottom = isBottomTratativa ? 'tratativa_pacotes' : 'mesa_dc';
+
           contentHtml += `
             <div class="dc-pair-card">
-              <div class="dc-single-mesa">
-                <div class="card-title">MESA ${mTop}</div>
+              <div class="dc-single-mesa ${isTopTratativa ? 'mesa-tratativa' : ''}">
+                <div class="card-title" ${isTopTratativa ? 'style="color:#f59e0b;"' : ''}>${titleTop}</div>
                 <div class="slot">
-                  <label>Operador 1</label>
-                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mTop}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mTop}_1', this.value)">${optionsHtml}</select>
-                </div>
-                <div class="slot">
-                  <label>Operador 2</label>
-                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mTop}_2" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mTop}_2', this.value)">${optionsHtml}</select>
+                  <label>${isTopTratativa ? 'Tratativa' : 'Operador 1'}</label>
+                  <select data-funcao="${funcTop}" id="dc_${dia}_dc_mesa_${mTop}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mTop}_1', this.value)">${optionsHtml}</select>
                 </div>
               </div>
 
-              <div class="dc-single-mesa">
-                <div class="card-title">MESA ${mBottom}</div>
+              <div class="dc-single-mesa ${isBottomTratativa ? 'mesa-tratativa' : ''}">
+                <div class="card-title" ${isBottomTratativa ? 'style="color:#f59e0b;"' : ''}>${titleBottom}</div>
                 <div class="slot">
-                  <label>Operador 1</label>
-                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mBottom}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mBottom}_1', this.value)">${optionsHtml}</select>
-                </div>
-                <div class="slot">
-                  <label>Operador 2</label>
-                  <select data-funcao="mesa_dc" id="dc_${dia}_dc_mesa_${mBottom}_2" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mBottom}_2', this.value)">${optionsHtml}</select>
+                  <label>${isBottomTratativa ? 'Tratativa' : 'Operador 1'}</label>
+                  <select data-funcao="${funcBottom}" id="dc_${dia}_dc_mesa_${mBottom}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mBottom}_1', this.value)">${optionsHtml}</select>
                 </div>
               </div>
             </div>
@@ -859,19 +837,13 @@
 
     function aplicarFiltroExibicaoDias() {
       if (abaAtual === 'dinamica') return;
-      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
       const verDiaVal = document.getElementById('filtroVerDia').value;
-      const diasVisiveis = tiposEscala[tipoEscalaVal].dias;
 
       diasSemana.forEach(dia => {
         const blockRec = document.getElementById(`block_rec_${dia}`);
         const blockDc = document.getElementById(`block_dc_${dia}`);
         
-        let exibir = diasVisiveis.includes(dia);
-
-        if (verDiaVal !== 'todos') {
-          exibir = (dia === verDiaVal) && exibir;
-        }
+        let exibir = (verDiaVal === 'todos') || (dia === verDiaVal);
 
         if (exibir) {
           if (blockRec) blockRec.classList.remove('day-hidden');
@@ -894,10 +866,8 @@
 
       if (tipo === 'rec') {
         window.escalaRecebimento[dia][key] = val;
-        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
       } else {
         window.escalaDoubleCheck[dia][key] = val;
-        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
       }
       atualizarNaoEscalados();
       validarDuplicidades();
@@ -919,12 +889,12 @@
             { id: 'distribuicao_volumosos', label: 'Distr. Volumosos' },
             { id: 'handover', label: 'Handover' },
             { id: 'dono_rua', label: 'Dono de Rua' },
-            { id: 'mesa_xpt', label: 'Mesa XPT' }
+            { id: 'xpt', label: 'XPT' }
           ]
         : [
             { id: 'mesa_dc', label: 'Mesas DC' },
+            { id: 'tratativa_pacotes', label: 'Tratativa (Mesa 7)' },
             { id: 'puxar_gaiolas', label: 'Puxar Gaiolas' },
-            { id: 'tratativa_pacotes', label: 'Tratativa' },
             { id: 'pacotinhos', label: 'Pacotinhos' }
           ];
 
@@ -948,10 +918,10 @@
             else if (key.includes('distribuicao_volumosos')) funcId = 'distribuicao_volumosos';
             else if (key.includes('handover')) funcId = 'handover';
             else if (key.includes('dono_rua')) funcId = 'dono_rua';
-            else if (key.includes('mesa_xpt')) funcId = 'mesa_xpt';
+            else if (key.includes('xpt')) funcId = 'xpt';
+            else if (key.includes('dc_mesa_7_1')) funcId = 'tratativa_pacotes';
             else if (key.includes('dc_mesa')) funcId = 'mesa_dc';
             else if (key.includes('puxar_gaiolas')) funcId = 'puxar_gaiolas';
-            else if (key.includes('tratativa_pacotes')) funcId = 'tratativa_pacotes';
             else if (key.includes('pacotinhos')) funcId = 'pacotinhos';
 
             if (funcId && matriz[operador][funcId] !== undefined) {
@@ -1006,10 +976,8 @@
       if (confirm(`Tem certeza que deseja limpar a escala de ${nomesDias[dia]}?`)) {
         if (tipo === 'rec') {
           window.escalaRecebimento[dia] = {};
-          localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
         } else {
           window.escalaDoubleCheck[dia] = {};
-          localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
         }
         window.renderEstruturas();
         if (window.agendarAutoSave) window.agendarAutoSave();
@@ -1018,24 +986,16 @@
 
     function resetarSemanaAtual() {
       if (window.perfilAtual !== 'admin') return;
-      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
-      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
       const setor = (abaAtual === 'recebimento') ? 'Recebimento Geral' : 'Double Check';
       
-      if (confirm(`Tem certeza que deseja LIMPAR TODOS OS DIAS da escala (${tiposEscala[tipoEscalaVal].label}) do ${setor}?`)) {
-        diasAlvo.forEach(dia => {
+      if (confirm(`Tem certeza que deseja LIMPAR TODOS OS DIAS (Seg a Sáb) do ${setor}?`)) {
+        diasSemana.forEach(dia => {
           if (abaAtual === 'recebimento') {
             window.escalaRecebimento[dia] = {};
           } else {
             window.escalaDoubleCheck[dia] = {};
           }
         });
-
-        if (abaAtual === 'recebimento') {
-          localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
-        } else {
-          localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
-        }
 
         window.renderEstruturas();
         if (window.agendarAutoSave) window.agendarAutoSave();
@@ -1044,14 +1004,11 @@
 
     function desalocarTodosOperadores() {
       if (window.perfilAtual !== 'admin') return;
-      if (confirm('Tem certeza que deseja REMOVER TODOS OS OPERADORES das escalas (Recebimento Geral e Double Check) de todos os dias? Os colaboradores continuarão cadastrados.')) {
+      if (confirm('Tem certeza que deseja REMOVER TODOS OS OPERADORES das escalas de todos os dias? Os colaboradores continuarão cadastrados.')) {
         diasSemana.forEach(dia => {
           window.escalaRecebimento[dia] = {};
           window.escalaDoubleCheck[dia] = {};
         });
-
-        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
-        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
 
         window.renderEstruturas();
         if (window.agendarAutoSave) window.agendarAutoSave();
@@ -1096,16 +1053,7 @@
       } else {
         window.skillsColaboradores[nome].push(skillId);
       }
-      localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
       if (window.agendarAutoSave) window.agendarAutoSave();
-    }
-
-    function colaboradorTrabalhaNoDia(nome, dia) {
-      const config = window.escalaPorColaborador[nome];
-      if (!config) return true;
-      const tipo = tiposEscala[config.tipoEscala];
-      if (!tipo) return true;
-      return tipo.dias.includes(dia);
     }
 
     function colaboradorAptoParaFuncao(nome, funcao) {
@@ -1114,7 +1062,7 @@
     }
 
     function obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, funcao, dia, maximoUso = 3) {
-      const aptos = candidatos.filter(c => colaboradorTrabalhaNoDia(c, dia) && colaboradorAptoParaFuncao(c, funcao));
+      const aptos = candidatos.filter(c => colaboradorAptoParaFuncao(c, funcao));
 
       for (let c of aptos) {
         if (jaAlocadosNoDia.has(c)) continue;
@@ -1130,7 +1078,7 @@
     function executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana) {
       window.escalaRecebimento[dia] = {};
 
-      const mesasCompletas = ['m1_2', 'm3_4', 'm5_6', 'm7_8', 'm9_10'];
+      const mesasCompletas = ['m1_2', 'm3_4', 'm5_6'];
       const slotsCompletos = ['abastecedor', 'bipador_1', 'etiquetador_1', 'bipador_2', 'etiquetador_2', 'sorting'];
 
       mesasCompletas.forEach(pairId => {
@@ -1167,7 +1115,7 @@
         }
       }
 
-      funcoesExtrasRec.forEach(ext => {
+      funcoesExtrasRec.filter(ext => ext.id !== 'xpt').forEach(ext => {
         for (let i = 1; i <= ext.qtd; i++) {
           const candidatos = [...window.colaboradores].sort(() => Math.random() - 0.5);
           const escolhido = obterProximoDisponivel(candidatos, jaAlocadosNoDia, usoFuncaoSemana, ext.id, dia, 3);
@@ -1183,35 +1131,34 @@
     function sortearSemana() {
       if (window.perfilAtual !== 'admin') return;
       const tipo = (abaAtual === 'recebimento') ? 'rec' : 'dc';
-      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
-      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
       const usoFuncaoSemana = {};
 
       if (tipo === 'rec') {
-        diasAlvo.forEach(dia => {
+        diasSemana.forEach(dia => {
           const jaAlocadosNoDia = new Set();
           executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana);
         });
-        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
       } else {
-        diasAlvo.forEach((dia) => {
+        diasSemana.forEach((dia) => {
           window.escalaDoubleCheck[dia] = {};
           const jaAlocadosNoDia = new Set();
           const candidatosDoDia = [...window.colaboradores].sort(() => Math.random() - 0.5);
 
-          for (let m = 1; m <= 12; m++) {
-            for (let pos = 1; pos <= 2; pos++) {
-              const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, 'mesa_dc', dia, 3);
-              if (escolhido) {
-                window.escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = escolhido;
-                jaAlocadosNoDia.add(escolhido);
-                usoFuncaoSemana[`${escolhido}|mesa_dc`] = (usoFuncaoSemana[`${escolhido}|mesa_dc`] || 0) + 1;
-              }
+          // 14 MESAS (MESA 7 ATUA COMO TRATATIVA DE PACOTES)
+          for (let m = 1; m <= 14; m++) {
+            const funcTarget = (m === 7) ? 'tratativa_pacotes' : 'mesa_dc';
+            const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, funcTarget, dia, 3);
+            if (escolhido) {
+              window.escalaDoubleCheck[dia][`dc_mesa_${m}_1`] = escolhido;
+              jaAlocadosNoDia.add(escolhido);
+              usoFuncaoSemana[`${escolhido}|${funcTarget}`] = (usoFuncaoSemana[`${escolhido}|${funcTarget}`] || 0) + 1;
             }
           }
 
           funcoesDC.forEach(ext => {
-            for (let i = 1; i <= ext.qtd; i++) {
+            const limiteAlocacao = (ext.id === 'pacotinhos') ? 2 : ext.qtd;
+
+            for (let i = 1; i <= limiteAlocacao; i++) {
               const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, ext.id, dia, 3);
               if (escolhido) {
                 window.escalaDoubleCheck[dia][`${ext.id}_${i}`] = escolhido;
@@ -1221,7 +1168,6 @@
             }
           });
         });
-        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
       }
 
       window.renderEstruturas();
@@ -1234,24 +1180,25 @@
         const jaAlocadosNoDia = new Set();
         const usoFuncaoSemana = {};
         executarAlocacaoDiaRecebimento(dia, jaAlocadosNoDia, usoFuncaoSemana);
-        localStorage.setItem('escala_rec_v18', JSON.stringify(window.escalaRecebimento));
       } else {
-        const disponiveis = window.colaboradores.filter(c => colaboradorTrabalhaNoDia(c, dia));
+        const disponiveis = [...window.colaboradores];
         const embaralhados = [...disponiveis].sort(() => Math.random() - 0.5);
         let idx = 0;
 
         window.escalaDoubleCheck[dia] = {};
-        for (let m = 1; m <= 12; m++) {
-          for (let pos = 1; pos <= 2; pos++) {
-            if (idx < embaralhados.length) window.escalaDoubleCheck[dia][`dc_mesa_${m}_${pos}`] = embaralhados[idx++];
-          }
+        
+        // 14 MESAS (MESA 7 É TRATATIVA)
+        for (let m = 1; m <= 14; m++) {
+          if (idx < embaralhados.length) window.escalaDoubleCheck[dia][`dc_mesa_${m}_1`] = embaralhados[idx++];
         }
+
         funcoesDC.forEach(ext => {
-          for (let i = 1; i <= ext.qtd; i++) {
+          const limiteAlocacao = (ext.id === 'pacotinhos') ? 2 : ext.qtd;
+
+          for (let i = 1; i <= limiteAlocacao; i++) {
             if (idx < embaralhados.length) window.escalaDoubleCheck[dia][`${ext.id}_${i}`] = embaralhados[idx++];
           }
         });
-        localStorage.setItem('escala_dc_v18', JSON.stringify(window.escalaDoubleCheck));
       }
 
       window.renderEstruturas();
@@ -1262,15 +1209,13 @@
       if (abaAtual === 'dinamica') return;
       const prefixoEl = (abaAtual === 'recebimento') ? 'rec_' : 'dc_';
       const containerAba = (abaAtual === 'recebimento') ? document.getElementById('tab-recebimento') : document.getElementById('tab-doublecheck');
-      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
-      const diasAlvo = tiposEscala[tipoEscalaVal].dias;
 
       const allSelects = containerAba.querySelectorAll('select');
       allSelects.forEach(s => s.classList.remove('duplicate-same-day', 'duplicate-yellow', 'duplicate-purple', 'duplicate-red'));
 
       const contadorPessoaFuncaoSemana = {};
 
-      diasAlvo.forEach(dia => {
+      diasSemana.forEach(dia => {
         const selectsDoDia = containerAba.querySelectorAll(`select[id^="${prefixoEl}${dia}_"]`);
 
         const contadorPessoaDia = {};
@@ -1319,9 +1264,6 @@
       const texto = textarea.value;
       if (!texto.trim()) return;
 
-      const tipoEscala = document.getElementById('novoTipoEscala').value;
-      const domingoMes = document.getElementById('novoDomingoMes').value;
-
       const funcoesMarcadas = [];
       document.querySelectorAll('.quick-skill-cb:checked').forEach(cb => {
         funcoesMarcadas.push(cb.value);
@@ -1333,7 +1275,6 @@
       nomesProcessados.forEach(nome => {
         if (!window.colaboradores.includes(nome)) {
           window.colaboradores.push(nome);
-          window.escalaPorColaborador[nome] = { tipoEscala, domingoMes };
           window.skillsColaboradores[nome] = [...funcoesMarcadas];
           adicionados++;
         }
@@ -1345,29 +1286,20 @@
         return;
       }
 
-      localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
-      localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
-      localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
-
       textarea.value = '';
       window.renderEstruturas();
       if (window.agendarAutoSave) window.agendarAutoSave();
     }
 
-    function resetarBancoNomes() {
+    async function resetarBancoNomes() {
       if (window.perfilAtual !== 'admin') return;
       if (confirm('Tem certeza que deseja apagar TODOS os colaboradores e zerar as escalas?')) {
         window.colaboradores = [];
-        window.escalaPorColaborador = {};
         diasSemana.forEach(dia => {
           window.escalaRecebimento[dia] = {};
           window.escalaDoubleCheck[dia] = {};
         });
-        localStorage.removeItem('colaboradores_v18');
-        localStorage.removeItem('escala_colaborador_v18');
-        localStorage.removeItem('escala_rec_v18');
-        localStorage.removeItem('escala_dc_v18');
-        localStorage.removeItem('skills_v18');
+
         window.renderEstruturas();
         if (window.agendarAutoSave) window.agendarAutoSave();
       }
@@ -1377,11 +1309,7 @@
       if (window.perfilAtual !== 'admin') return;
       if (confirm(`Remover ${nome}?`)) {
         window.colaboradores = window.colaboradores.filter(c => c !== nome);
-        delete window.escalaPorColaborador[nome];
         delete window.skillsColaboradores[nome];
-        localStorage.setItem('colaboradores_v18', JSON.stringify(window.colaboradores));
-        localStorage.setItem('escala_colaborador_v18', JSON.stringify(window.escalaPorColaborador));
-        localStorage.setItem('skills_v18', JSON.stringify(window.skillsColaboradores));
         window.renderEstruturas();
         if (window.agendarAutoSave) window.agendarAutoSave();
       }
@@ -1391,14 +1319,9 @@
       if (abaAtual === 'dinamica') return;
       
       const todosColaboradores = window.colaboradores || [];
-      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
       const verDiaVal = document.getElementById('filtroVerDia').value;
       
-      let diasAlvo = tiposEscala[tipoEscalaVal].dias;
-
-      if (verDiaVal !== 'todos') {
-        diasAlvo = diasAlvo.filter(d => d === verDiaVal);
-      }
+      let diasAlvo = (verDiaVal !== 'todos') ? [verDiaVal] : diasSemana;
 
       const jaEscaladosSet = new Set();
       const setorData = (abaAtual === 'recebimento') ? window.escalaRecebimento : window.escalaDoubleCheck;
@@ -1452,8 +1375,6 @@
     function gerarPrintPreview() {
       const modoPrint = document.getElementById('printEscalaSelect').value;
       const setor = document.getElementById('printSetorSelect').value;
-      const tipoEscalaVal = document.getElementById('filtroEscalaTipo').value;
-      const domLabel = document.getElementById('filtroDomingoMes').options[document.getElementById('filtroDomingoMes').selectedIndex].text;
       const verDiaVal = document.getElementById('filtroVerDia').value;
 
       if (modoPrint === 'dia_selecionado' && verDiaVal === 'todos') {
@@ -1465,16 +1386,9 @@
       captureArea.innerHTML = '';
 
       let htmlPrint = `<div style="display: flex; flex-direction: column; gap: 20px;">`;
-      htmlPrint += `<h2 style="text-align: center; color: #60a5fa; margin: 0 0 10px 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">ESCALA (${tiposEscala[tipoEscalaVal].label.toUpperCase()}) - ${domLabel.toUpperCase()} - ${setor === 'rec' ? 'RECEBIMENTO GERAL' : 'DOUBLE CHECK'}</h2>`;
+      htmlPrint += `<h2 style="text-align: center; color: #60a5fa; margin: 0 0 10px 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">ESCALA SEGUNDA A SÁBADO - ${setor === 'rec' ? 'RECEBIMENTO GERAL' : 'DOUBLE CHECK'}</h2>`;
 
-      let diasParaImprimir = [];
-      if (modoPrint === 'dia_selecionado') {
-        diasParaImprimir = [verDiaVal];
-      } else if (modoPrint === 'todas') {
-        diasParaImprimir = diasSemana;
-      } else {
-        diasParaImprimir = tiposEscala[tipoEscalaVal].dias;
-      }
+      let diasParaImprimir = (modoPrint === 'dia_selecionado') ? [verDiaVal] : diasSemana;
 
       diasParaImprimir.forEach(dia => {
         const originalBlock = document.getElementById(`block_${setor}_${dia}`);
@@ -1536,7 +1450,7 @@
           img.style.border = '1px solid #334155';
           previewBox.appendChild(img);
 
-          const nomeArquivo = `Escala_${setor.toUpperCase()}_${tipoEscalaVal}.png`;
+          const nomeArquivo = `Escala_${setor.toUpperCase()}_Seg_Sab.png`;
 
           const btnDownload = document.getElementById('downloadImageBtn');
           btnDownload.href = canvas.toDataURL('image/png', 1.0);
@@ -1550,7 +1464,9 @@
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     }
 
-    window.renderEstruturas();
+    window.addEventListener('DOMContentLoaded', () => {
+      carregarDadosLocais();
+    });
   </script>
 </body>
 </html>
