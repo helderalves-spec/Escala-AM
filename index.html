@@ -8,6 +8,76 @@
   <!-- Bibliotecas Externas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+  <!-- Firebase SDKs (v10.8.0 via CDN) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBEk25E4X6ksYtQds8we89mZ1rGo9JH0s4",
+      authDomain: "escala-am.firebaseapp.com",
+      databaseURL: "https://escala-am-default-rtdb.firebaseio.com",
+      projectId: "escala-am",
+      storageBucket: "escala-am.firebasestorage.app",
+      messagingSenderId: "434278194465",
+      appId: "1:434278194465:web:ca3ad65172e563cdaeb260",
+      measurementId: "G-RR6HF9P1QC"
+    };
+
+    // Inicialização do Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Salvar dados no Firebase Realtime Database
+    window.salvarNoFirebase = function() {
+      if (window.perfilAtual !== 'admin') return;
+
+      window.atualizarStatus("🟡 Salvando no Firebase...", "status-saving");
+
+      const dadosParaSalvar = {
+        colaboradores: window.colaboradores || [],
+        skillsColaboradores: window.skillsColaboradores || {},
+        escalaRecebimento: window.escalaRecebimento || {},
+        escalaDoubleCheck: window.escalaDoubleCheck || {}
+      };
+
+      set(ref(db, 'sistema_escalas/'), dadosParaSalvar)
+        .then(() => {
+          window.atualizarStatus("🟢 Sincronizado na Nuvem", "status-saved");
+        })
+        .catch((error) => {
+          console.error("Erro ao salvar no Firebase:", error);
+          window.atualizarStatus("🔴 Erro de Conexão", "status-saving");
+        });
+    };
+
+    // Escuta em Tempo Real (Carrega os dados e atualiza para todos automaticamente)
+    const escalaRef = ref(db, 'sistema_escalas/');
+    onValue(escalaRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (data.colaboradores) window.colaboradores = data.colaboradores;
+        if (data.skillsColaboradores) window.skillsColaboradores = data.skillsColaboradores;
+        if (data.escalaRecebimento) window.escalaRecebimento = data.escalaRecebimento;
+        if (data.escalaDoubleCheck) window.escalaDoubleCheck = data.escalaDoubleCheck;
+
+        if (window.renderEstruturas) {
+          window.renderEstruturas();
+        }
+        window.atualizarStatus("🟢 Sincronizado na Nuvem", "status-saved");
+      }
+    });
+
+    // Função com Debounce para evitar excesso de requisições
+    let timerAutoSave = null;
+    window.agendarAutoSave = function() {
+      clearTimeout(timerAutoSave);
+      timerAutoSave = setTimeout(() => {
+        window.salvarNoFirebase();
+      }, 500);
+    };
+  </script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; background: #0d0f17; color: #f1f5f9; }
@@ -53,7 +123,7 @@
     .btn-red-solid { background: #ef4444; color: white; border: none; }
     .btn:hover { opacity: 0.85; }
 
-    /* BADGE DE STATUS LOCAL (INDEXEDDB) */
+    /* BADGE DE STATUS FIREBASE */
     .status-badge {
       padding: 4px 10px;
       border-radius: 12px;
@@ -203,7 +273,7 @@
   <div class="top-bar">
     <h1>Gerenciador de Escalas Pro (Segunda a Domingo)</h1>
     <div class="action-buttons">
-      <span id="storageStatus" class="status-badge status-saved">🟢 Armazenado Localmente</span>
+      <span id="storageStatus" class="status-badge status-saved">🟢 Sincronizado na Nuvem</span>
       <button class="btn btn-outline-yellow admin-only" onclick="abrirModalSkills()">🎯 Skills / Competências</button>
       <button class="btn btn-outline-blue" onclick="abrirModalPrint()">📷 Imagem (.png HD)</button>
       <button class="btn btn-outline-purple admin-only" onclick="sortearSemana()">🎲 Sortear Escala</button>
@@ -369,109 +439,6 @@
   <!-- ÁREA OCULTA PARA CAPTURA DE IMAGEM -->
   <div id="captureArea"></div>
 
-  <!-- GERENCIADOR LOCAL IndexedDB PARA ARMAZENAMENTO PERSISTENTE -->
-  <script>
-    if (navigator.storage && navigator.storage.persist) {
-      navigator.storage.persist().then(persistent => {
-        console.log(persistent ? "Storage garantido contra limpeza automatica." : "Storage padrao.");
-      });
-    }
-
-    const DB_NAME = 'EscalasDB_SegSab';
-    const DB_VERSION = 1;
-    const STORE_NAME = 'dados_escalas';
-    let db = null;
-
-    function abrirBD() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = (e) => {
-          const dbInstance = e.target.result;
-          if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-            dbInstance.createObjectStore(STORE_NAME);
-          }
-        };
-        req.onsuccess = (e) => {
-          db = e.target.result;
-          resolve(db);
-        };
-        req.onerror = (e) => reject(e);
-      });
-    }
-
-    async function salvarNoIndexedDB(chave, valor) {
-      if (!db) await abrirBD();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        store.put(valor, chave);
-        tx.oncomplete = () => resolve();
-        tx.onerror = (e) => reject(e);
-      });
-    }
-
-    async function carregarDoIndexedDB(chave) {
-      if (!db) await abrirBD();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.get(chave);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = (e) => reject(e);
-      });
-    }
-
-    let timerAutoSave = null;
-
-    function atualizarStatus(texto, classe) {
-      const el = document.getElementById("storageStatus");
-      if (el) {
-        el.textContent = texto;
-        el.className = `status-badge ${classe}`;
-      }
-    }
-
-    window.agendarAutoSave = function() {
-      atualizarStatus("🟡 Salvando...", "status-saving");
-      
-      clearTimeout(timerAutoSave);
-      timerAutoSave = setTimeout(async () => {
-        try {
-          await salvarNoIndexedDB('colaboradores', window.colaboradores || []);
-          await salvarNoIndexedDB('skillsColaboradores', window.skillsColaboradores || {});
-          await salvarNoIndexedDB('escalaRecebimento', window.escalaRecebimento || {});
-          await salvarNoIndexedDB('escalaDoubleCheck', window.escalaDoubleCheck || {});
-          
-          atualizarStatus("🟢 Armazenado Localmente", "status-saved");
-        } catch (e) {
-          console.error("Erro no salvamento IndexedDB: ", e);
-          atualizarStatus("🔴 Erro ao salvar", "status-saving");
-        }
-      }, 300);
-    };
-
-    async function carregarDadosLocais() {
-      try {
-        const colab = await carregarDoIndexedDB('colaboradores');
-        const sk = await carregarDoIndexedDB('skillsColaboradores');
-        const escRec = await carregarDoIndexedDB('escalaRecebimento');
-        const escDC = await carregarDoIndexedDB('escalaDoubleCheck');
-
-        if (colab) window.colaboradores = colab;
-        if (sk) window.skillsColaboradores = sk;
-        if (escRec) window.escalaRecebimento = escRec;
-        if (escDC) window.escalaDoubleCheck = escDC;
-
-      } catch (err) {
-        console.warn("Nenhum dado prévio encontrado no IndexedDB.", err);
-      } finally {
-        if (window.renderEstruturas) {
-          window.renderEstruturas();
-        }
-      }
-    }
-  </script>
-
   <script>
     // FIXO: Segunda a Domingo
     const diasSemana = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
@@ -481,7 +448,7 @@
     window.perfilAtual = 'espectador';
     const SENHA_ADMIN = "1013";
 
-    // MANTIDO: 10 MESAS DIVIDIDAS EM 5 PARES PARA O RECEBIMENTO GERAL
+    // 10 MESAS DIVIDIDAS EM 5 PARES PARA O RECEBIMENTO GERAL
     const paresMesas = [
       { id: 'm1_2', label: 'Mesa 1 e Mesa 2' },
       { id: 'm3_4', label: 'Mesa 3 e Mesa 4' },
@@ -506,7 +473,6 @@
       { id: 'pacotinhos', label: 'Pacotinhos' }
     ];
 
-    // ATUALIZADO: HANDOVER, DONO DE RUA E XPT AGORA EXPANDIDOS PARA ATÉ 7 PESSOAS
     const funcoesExtrasRec = [
       { id: 'handover', label: 'HANDOVER', qtd: 7 },
       { id: 'dono_rua', label: 'DONO DE RUA', qtd: 7 },
@@ -532,6 +498,14 @@
       if (!window.escalaRecebimento[dia]) window.escalaRecebimento[dia] = {};
       if (!window.escalaDoubleCheck[dia]) window.escalaDoubleCheck[dia] = {};
     });
+
+    window.atualizarStatus = function(texto, classe) {
+      const el = document.getElementById("storageStatus");
+      if (el) {
+        el.textContent = texto;
+        el.className = `status-badge ${classe}`;
+      }
+    };
 
     /* GERENCIAMENTO DE PERFIL DE ACESSO */
     function entrarComoAdmin() {
@@ -762,7 +736,6 @@
       diasSemana.forEach(dia => {
         let contentHtml = '';
 
-        // 14 MESAS DIVIDIDAS EM PARES. MESA 7 DEFINIDA COMO TRATATIVA DE PACOTES
         for (let m = 1; m <= 14; m += 2) {
           const mTop = m;
           const mBottom = m + 1;
@@ -1145,7 +1118,6 @@
           const jaAlocadosNoDia = new Set();
           const candidatosDoDia = [...window.colaboradores].sort(() => Math.random() - 0.5);
 
-          // 14 MESAS (MESA 7 ATUA COMO TRATATIVA DE PACOTES)
           for (let m = 1; m <= 14; m++) {
             const funcTarget = (m === 7) ? 'tratativa_pacotes' : 'mesa_dc';
             const escolhido = obterProximoDisponivel(candidatosDoDia, jaAlocadosNoDia, usoFuncaoSemana, funcTarget, dia, 3);
@@ -1188,7 +1160,6 @@
 
         window.escalaDoubleCheck[dia] = {};
         
-        // 14 MESAS (MESA 7 É TRATATIVA)
         for (let m = 1; m <= 14; m++) {
           if (idx < embaralhados.length) window.escalaDoubleCheck[dia][`dc_mesa_${m}_1`] = embaralhados[idx++];
         }
@@ -1464,10 +1435,6 @@
     function fecharModais() {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      carregarDadosLocais();
-    });
   </script>
 </body>
 </html>
