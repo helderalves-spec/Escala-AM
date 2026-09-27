@@ -657,17 +657,41 @@
       aplicarPermissoesPerfil();
     };
 
-    function buildOptionsHTML() {
+    function obterNomesEscaladosNoDia(tipo, dia) {
+      const dadosSetor = (tipo === 'rec') ? window.escalaRecebimento[dia] : window.escalaDoubleCheck[dia];
+      if (!dadosSetor) return new Set();
+
+      const escalados = new Set();
+      Object.values(dadosSetor).forEach(nome => {
+        if (nome && nome.trim() !== '') {
+          escalados.add(nome);
+        }
+      });
+      return escalados;
+    }
+
+    function buildOptionsHTML(tipo, dia, selectKeyAtual) {
       let optionsHtml = '<option value="">- Selecione -</option>';
+      const nomesEscaladosNoDia = obterNomesEscaladosNoDia(tipo, dia);
+      
+      const valorAtual = (tipo === 'rec') 
+        ? (window.escalaRecebimento[dia] ? window.escalaRecebimento[dia][selectKeyAtual] : '')
+        : (window.escalaDoubleCheck[dia] ? window.escalaDoubleCheck[dia][selectKeyAtual] : '');
+
       for (let i = 0; i < window.colaboradores.length; i++) {
-        optionsHtml += `<option value="${window.colaboradores[i]}">${window.colaboradores[i]}</option>`;
+        const nome = window.colaboradores[i];
+        
+        // Exibe se não está alocado no dia OU se é a própria seleção deste campo
+        if (!nomesEscaladosNoDia.has(nome) || nome === valorAtual) {
+          const selected = (nome === valorAtual) ? 'selected' : '';
+          optionsHtml += `<option value="${nome}" ${selected}>${nome}</option>`;
+        }
       }
       return optionsHtml;
     }
 
     function renderRecebimento() {
       const container = document.getElementById('diasContainerRecebimento');
-      const optionsHtml = buildOptionsHTML();
       let htmlFinal = '';
 
       diasSemana.forEach(dia => {
@@ -678,16 +702,16 @@
             <div class="mesa-layout-card">
               <div class="card-title">${pair.label}</div>
               <div class="mesa-cross-grid">
-                <div class="slot pos-abastecedor"><label>Abastecedor</label><select data-funcao="abastecedor" id="rec_${dia}_${pair.id}_abastecedor" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_abastecedor', this.value)">${optionsHtml}</select></div>
+                <div class="slot pos-abastecedor"><label>Abastecedor</label><select data-funcao="abastecedor" id="rec_${dia}_${pair.id}_abastecedor" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_abastecedor', this.value)">${buildOptionsHTML('rec', dia, `${pair.id}_abastecedor`)}</select></div>
                 <div class="pos-left">
-                  <div class="slot"><label>Bipador</label><select data-funcao="bipador" id="rec_${dia}_${pair.id}_bipador_1" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_bipador_1', this.value)">${optionsHtml}</select></div>
-                  <div class="slot"><label>Etiquetador</label><select data-funcao="etiquetador" id="rec_${dia}_${pair.id}_etiquetador_1" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_etiquetador_1', this.value)">${optionsHtml}</select></div>
+                  <div class="slot"><label>Bipador</label><select data-funcao="bipador" id="rec_${dia}_${pair.id}_bipador_1" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_bipador_1', this.value)">${buildOptionsHTML('rec', dia, `${pair.id}_bipador_1`)}</select></div>
+                  <div class="slot"><label>Etiquetador</label><select data-funcao="etiquetador" id="rec_${dia}_${pair.id}_etiquetador_1" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_etiquetador_1', this.value)">${buildOptionsHTML('rec', dia, `${pair.id}_etiquetador_1`)}</select></div>
                 </div>
                 <div class="pos-right">
-                  <div class="slot"><label>Bipador</label><select data-funcao="bipador" id="rec_${dia}_${pair.id}_bipador_2" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_bipador_2', this.value)">${optionsHtml}</select></div>
-                  <div class="slot"><label>Etiquetador</label><select data-funcao="etiquetador" id="rec_${dia}_${pair.id}_etiquetador_2" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_etiquetador_2', this.value)">${optionsHtml}</select></div>
+                  <div class="slot"><label>Bipador</label><select data-funcao="bipador" id="rec_${dia}_${pair.id}_bipador_2" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_bipador_2', this.value)">${buildOptionsHTML('rec', dia, `${pair.id}_bipador_2`)}</select></div>
+                  <div class="slot"><label>Etiquetador</label><select data-funcao="etiquetador" id="rec_${dia}_${pair.id}_etiquetador_2" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_etiquetador_2', this.value)">${buildOptionsHTML('rec', dia, `${pair.id}_etiquetador_2`)}</select></div>
                 </div>
-                <div class="slot pos-sorting"><label>Sorting</label><select data-funcao="sorting" id="rec_${dia}_${pair.id}_sorting" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_sorting', this.value)">${optionsHtml}</select></div>
+                <div class="slot pos-sorting"><label>Sorting</label><select data-funcao="sorting" id="rec_${dia}_${pair.id}_sorting" onchange="salvarSelecao('rec', '${dia}', '${pair.id}_sorting', this.value)">${buildOptionsHTML('rec', dia, `${pair.id}_sorting`)}</select></div>
               </div>
             </div>
           `;
@@ -700,11 +724,11 @@
             <div class="card-title" style="color: #c084fc;">GAIOLEIRO (2)</div>
             <div class="slot">
               <label>Gaioleiro 1</label>
-              <select data-funcao="gaioleiro" id="rec_${dia}_gaioleiro_1" onchange="salvarSelecao('rec', '${dia}', 'gaioleiro_1', this.value)">${optionsHtml}</select>
+              <select data-funcao="gaioleiro" id="rec_${dia}_gaioleiro_1" onchange="salvarSelecao('rec', '${dia}', 'gaioleiro_1', this.value)">${buildOptionsHTML('rec', dia, 'gaioleiro_1')}</select>
             </div>
             <div class="slot">
               <label>Gaioleiro 2</label>
-              <select data-funcao="gaioleiro" id="rec_${dia}_gaioleiro_2" onchange="salvarSelecao('rec', '${dia}', 'gaioleiro_2', this.value)">${optionsHtml}</select>
+              <select data-funcao="gaioleiro" id="rec_${dia}_gaioleiro_2" onchange="salvarSelecao('rec', '${dia}', 'gaioleiro_2', this.value)">${buildOptionsHTML('rec', dia, 'gaioleiro_2')}</select>
             </div>
           </div>
         `;
@@ -715,19 +739,19 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
               <div class="slot">
                 <label>Volumosos 1</label>
-                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_1" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_1', this.value)">${optionsHtml}</select>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_1" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_1', this.value)">${buildOptionsHTML('rec', dia, 'distribuicao_volumosos_1')}</select>
               </div>
               <div class="slot">
                 <label>Volumosos 2</label>
-                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_2" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_2', this.value)">${optionsHtml}</select>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_2" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_2', this.value)">${buildOptionsHTML('rec', dia, 'distribuicao_volumosos_2')}</select>
               </div>
               <div class="slot">
                 <label>Volumosos 3</label>
-                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_3" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_3', this.value)">${optionsHtml}</select>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_3" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_3', this.value)">${buildOptionsHTML('rec', dia, 'distribuicao_volumosos_3')}</select>
               </div>
               <div class="slot">
                 <label>Volumosos 4</label>
-                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_4" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_4', this.value)">${optionsHtml}</select>
+                <select data-funcao="distribuicao_volumosos" id="rec_${dia}_distribuicao_volumosos_4" onchange="salvarSelecao('rec', '${dia}', 'distribuicao_volumosos_4', this.value)">${buildOptionsHTML('rec', dia, 'distribuicao_volumosos_4')}</select>
               </div>
             </div>
           </div>
@@ -742,7 +766,7 @@
               <div class="slot">
                 <label>Operador ${i}</label>
                 <select data-funcao="${ext.id}" id="rec_${dia}_extra_${ext.id}_${i}" onchange="salvarSelecao('rec', '${dia}', 'extra_${ext.id}_${i}', this.value)">
-                  ${optionsHtml}
+                  ${buildOptionsHTML('rec', dia, `extra_${ext.id}_${i}`)}
                 </select>
               </div>
             `;
@@ -776,7 +800,6 @@
 
     function renderDoubleCheck() {
       const container = document.getElementById('diasContainerDoubleCheck');
-      const optionsHtml = buildOptionsHTML();
       let htmlFinal = '';
 
       diasSemana.forEach(dia => {
@@ -802,7 +825,7 @@
                 <div class="card-title" ${isTopTratativa ? 'style="color:#f59e0b;"' : ''}>${titleTop}</div>
                 <div class="slot">
                   <label>${isTopTratativa ? 'Tratativa' : 'Operador 1'}</label>
-                  <select data-funcao="${funcTop}" id="dc_${dia}_dc_mesa_${mTop}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mTop}_1', this.value)">${optionsHtml}</select>
+                  <select data-funcao="${funcTop}" id="dc_${dia}_dc_mesa_${mTop}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mTop}_1', this.value)">${buildOptionsHTML('dc', dia, `dc_mesa_${mTop}_1`)}</select>
                 </div>
               </div>
 
@@ -810,7 +833,7 @@
                 <div class="card-title" ${isBottomTratativa ? 'style="color:#f59e0b;"' : ''}>${titleBottom}</div>
                 <div class="slot">
                   <label>${isBottomTratativa ? 'Tratativa' : 'Operador 1'}</label>
-                  <select data-funcao="${funcBottom}" id="dc_${dia}_dc_mesa_${mBottom}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mBottom}_1', this.value)">${optionsHtml}</select>
+                  <select data-funcao="${funcBottom}" id="dc_${dia}_dc_mesa_${mBottom}_1" onchange="salvarSelecao('dc', '${dia}', 'dc_mesa_${mBottom}_1', this.value)">${buildOptionsHTML('dc', dia, `dc_mesa_${mBottom}_1`)}</select>
                 </div>
               </div>
             </div>
@@ -824,7 +847,7 @@
               <div class="slot">
                 <label>Operador ${i}</label>
                 <select data-funcao="${ext.id}" id="dc_${dia}_${ext.id}_${i}" onchange="salvarSelecao('dc', '${dia}', '${ext.id}_${i}', this.value)">
-                  ${optionsHtml}
+                  ${buildOptionsHTML('dc', dia, `${ext.id}_${i}`)}
                 </select>
               </div>
             `;
@@ -890,6 +913,14 @@
       } else {
         window.escalaDoubleCheck[dia][key] = val;
       }
+
+      // Re-renderiza para atualizar a lista dinâmica de opções nos outros selects do dia
+      if (abaAtual === 'recebimento') {
+        renderRecebimento();
+      } else if (abaAtual === 'doublecheck') {
+        renderDoubleCheck();
+      }
+
       atualizarNaoEscalados();
       validarDuplicidades();
 
